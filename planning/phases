@@ -1,0 +1,49 @@
+Phase 1: The MVP (Must-Have)
+Focus: A functional end-to-end loop where a user reports and a dev tracks.
+
+1. The "Zammad" Intake (Customer Support)
+Omnichannel Support: Email-to-Ticket and a simple Web Form.
+
+Collision Warning: A simple "Agent X is viewing this" tag so you don't double-reply to a customer.
+
+Ticket History (Audit Trail): Immutable logs of status changes (New → Open → Closed).
+
+NextAuth Integration: Basic user login so you know who is reporting.
+
+2. The "Linear" Engine (Bug Tracking)
+Keyboard Shortcuts: (e.g., C for create, CMD+K for search). This makes you 10x faster as a solo/small-team dev.
+
+Standardized Labels: Hardcoded Bug, Feature, Support tags.
+
+Automated Context: Capture browser/OS/URL automatically on web reports (no more "it's broken" without logs).
+
+Simple Kanban Board: To-Do, In Progress, Done.
+
+3. The "Hydra" Backbone (Security)
+M2M Client Setup: Basic API key management so your Beego backend can securely push reports to Traccel.
+
+JWT Validation: Middleware in your apps to check if a report coming from a microservice is authorized.
+
+Phase 2: The "Accelerate" Release (V2)
+Focus: Automation and deep integration once you have active users.
+
+1. Advanced Workflow
+Zammad-style Multitasking: Tabbed interface inside the app to switch between tickets without reloading.
+
+SLA Timers: Visual countdowns (e.g., "Must reply in 4h") for VIP clients.
+
+AI Pre-Triage: Automatically suggest documentation to users before they submit.
+
+Auto-Duplicate Detection: Flagging reports that look like existing open bugs.
+
+2. Deep Technical Integration
+GitHub/GitLab Sync: Closing a ticket automatically when a PR is merged.
+
+Visual Pins: Letting customers click on a part of your Next.js UI to "pin" a bug report (like BugHerd).
+
+Session Replay Link: Automatically link a PostHog or LogRocket session to the bug report.
+
+3. Scaling & Compliance
+Full Hydra OIDC: Moving from simple API keys to full OpenID Connect for all internal services.
+
+Role-Based Access (RBAC): Granular permissions (e.g., "Guest" can only see their tickets, "Dev" can see all).
