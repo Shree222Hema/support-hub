@@ -8,6 +8,7 @@ from backend.models.ticket import Ticket
 logger = logging.getLogger(__name__)
 
 def _send_webhook_sync(ticket: Ticket) -> None:
+    logger.info(f"Background thread started to send Google Chat webhook for Ticket '{ticket.id}'")
     webhook_url = settings.GOOGLE_CHAT_WEBHOOK_URL
     if not webhook_url:
         logger.info("GOOGLE_CHAT_WEBHOOK_URL is not set. Skipping notification.")
@@ -30,7 +31,7 @@ def _send_webhook_sync(ticket: Ticket) -> None:
         logger.info(f"Google Chat notification sent successfully for Ticket '{ticket.id}'")
     except requests.exceptions.RequestException as e:
         # We catch the exception and simply log it so it doesn't break the application flow
-        logger.error(f"Failed to send Google Chat notification: {e}")
+        logger.error(f"Failed to send Google Chat webhook for Ticket '{ticket.id}': {e}")
 
 def send_new_ticket_notification(ticket: Ticket) -> None:
     """
