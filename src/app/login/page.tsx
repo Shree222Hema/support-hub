@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -15,12 +15,12 @@ import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 
-export default function LoginPage() {
+function LoginContent() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  
+
   const router = useRouter();
   const searchParams = useSearchParams();
   const { login } = useAuth();
@@ -45,11 +45,11 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-svh w-full flex-col items-center justify-center p-6 md:p-10">
       <div className="mb-8">
-        <Image 
-          src="/logo.png" 
-          alt="Traccel Logo" 
-          width={240} 
-          height={94} 
+        <Image
+          src="/logo.png"
+          alt="Traccel Logo"
+          width={240}
+          height={94}
           priority
           className="h-auto w-auto"
         />
@@ -102,5 +102,13 @@ export default function LoginPage() {
         </Card>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="flex min-h-svh w-full items-center justify-center">Loading...</div>}>
+      <LoginContent />
+    </Suspense>
   );
 }
