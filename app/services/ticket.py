@@ -3,6 +3,9 @@ from uuid import UUID
 from typing import List, Optional
 from app.models.ticket import Ticket, TicketStatus
 from app.schemas.ticket import TicketCreate, TicketUpdate
+from app.models.team_member import TeamMember
+from fastapi import HTTPException, status
+from app.services.notification import send_new_ticket_notification
 
 def get_ticket(db: Session, ticket_id: UUID) -> Optional[Ticket]:
     return db.query(Ticket).filter(Ticket.id == ticket_id).first()
@@ -18,6 +21,11 @@ def create_ticket(db: Session, ticket_in: TicketCreate) -> Ticket:
     db.add(db_ticket)
     db.commit()
     db.refresh(db_ticket)
+    
+    # Trigger Google Chat Webhook if the ticket is created as OPEN
+    if db_ticket.status == TicketStatus.OPEN:
+        send_new_ticket_notification(db_ticket)
+        
     return db_ticket
 
 def update_ticket(db: Session, db_ticket: Ticket, ticket_in: TicketUpdate) -> Ticket:
