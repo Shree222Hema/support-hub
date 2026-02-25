@@ -1,17 +1,35 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Ticket, CheckCircle2, AlertCircle, BarChart3 } from "lucide-react";
+import { prisma } from "@/lib/db";
 
 async function getDashboardData() {
   try {
-    const res = await fetch("/api/v1/reports/summary", {
-      cache: "no-store", // Always fetch fresh data natively Server Side
+    const totalTickets = await prisma.ticket.count();
+
+    const statusCounts = await prisma.ticket.groupBy({
+      by: ['status'],
+      _count: { id: true },
     });
 
-    if (!res.ok) {
-      return null;
-    }
+    const priorityCounts = await prisma.ticket.groupBy({
+      by: ['priority'],
+      _count: { id: true },
+    });
 
-    return res.json();
+    const openTickets = statusCounts.find(s => s.status === 'OPEN')?._count.id || 0;
+    const closedTickets = statusCounts.find(s => s.status === 'CLOSED')?._count.id || 0;
+
+    const priorityBreakdown: Record<string, number> = {};
+    priorityCounts.forEach(p => {
+      priorityBreakdown[p.priority] = p._count.id;
+    });
+
+    return {
+      total_tickets: totalTickets,
+      open_tickets: openTickets,
+      closed_tickets: closedTickets,
+      priority_breakdown: priorityBreakdown,
+    };
   } catch {
     return null;
   }
@@ -19,11 +37,11 @@ async function getDashboardData() {
 
 async function getRecentTickets() {
   try {
-    const res = await fetch("/api/v1/tickets/?limit=4", {
-      cache: "no-store",
+    const tickets = await prisma.ticket.findMany({
+      orderBy: { created_at: 'desc' },
+      take: 4,
     });
-    if (!res.ok) return [];
-    return res.json();
+    return tickets;
   } catch {
     return [];
   }
@@ -39,9 +57,9 @@ export default async function DashboardPage() {
     return (
       <div className="p-8 text-center text-red-500 bg-red-50/50 rounded-xl my-8">
         <AlertCircle className="w-12 h-12 mx-auto mb-4" />
-        <h1 className="text-2xl font-bold mb-4">Backend Connection Error</h1>
-        <p>Could not connect to the FastAPI backend at <strong>http://127.0.0.1:8000</strong>.</p>
-        <p className="mt-2 text-sm">Please ensure uvicorn is running and try again.</p>
+        <h1 className="text-2xl font-bold mb-4">Database Connection Error</h1>
+        <p>Could not connect to the PostgreSQL database.</p>
+        <p className="mt-2 text-sm">Please ensure your database is running and DATABASE_URL is correct.</p>
       </div>
     );
   }
