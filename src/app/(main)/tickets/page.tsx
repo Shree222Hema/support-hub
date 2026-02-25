@@ -2,17 +2,24 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Trash2, RefreshCcw, Ticket as TicketIcon } from "lucide-react";
+import { Trash2, RefreshCcw, Ticket as TicketIcon, Eye, ChevronLeft, ChevronRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CreateTicketModal } from "@/components/CreateTicketModal";
 import { toast } from "sonner";
+import { ViewTicketModal } from "@/components/ViewTicketModal";
+import { Input } from "@/components/ui/input";
 
-type Ticket = {
+export type Ticket = {
     id: string;
     title: string;
+    description: string;
     status: "OPEN" | "CLOSED";
     priority: "LOW" | "MEDIUM" | "HIGH";
     assigned_to: string | null;
+    user_id: string | null;
+    tenant_id: string | null;
+    user_email: string | null;
+    source_app: string | null;
     created_at: string;
 };
 
@@ -21,6 +28,11 @@ export default function TicketsPage() {
     const [loading, setLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState<string | null>(null);
     const [filter, setFilter] = useState<"ALL" | "OPEN" | "CLOSED">("ALL");
+    const [searchQuery, setSearchQuery] = useState("");
+    const [currentPage, setCurrentPage] = useState(1);
+    const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
+
+    const ITEMS_PER_PAGE = 10;
 
     const fetchTickets = async () => {
         setLoading(true);
@@ -89,9 +101,25 @@ export default function TicketsPage() {
         }
     };
 
-    const filteredTickets = tickets.filter((ticket) =>
-        filter === "ALL" ? true : ticket.status === filter
+    const filteredTickets = tickets.filter((ticket) => {
+        const matchesFilter = filter === "ALL" ? true : ticket.status === filter;
+        const matchesSearch =
+            ticket.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            ticket.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (ticket.description && ticket.description.toLowerCase().includes(searchQuery.toLowerCase()));
+        return matchesFilter && matchesSearch;
+    });
+
+    const totalPages = Math.ceil(filteredTickets.length / ITEMS_PER_PAGE) || 1;
+    const paginatedTickets = filteredTickets.slice(
+        (currentPage - 1) * ITEMS_PER_PAGE,
+        currentPage * ITEMS_PER_PAGE
     );
+
+    // Reset to page 1 when search or filter changes
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchQuery, filter]);
 
     return (
         <div className="p-8 max-w-7xl mx-auto space-y-6">
@@ -100,8 +128,15 @@ export default function TicketsPage() {
                     <h1 className="text-3xl font-bold tracking-tight">Tickets</h1>
                     <p className="text-muted-foreground mt-1">Manage and track all support requests.</p>
                 </div>
-                <div className="flex flex-col sm:flex-row items-center gap-4">
-                    <div className="flex bg-secondary p-1 rounded-lg">
+                <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
+                    <Input
+                        type="search"
+                        placeholder="Search tickets..."
+                        className="w-full sm:w-64"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                    <div className="flex bg-secondary p-1 rounded-lg shrink-0">
                         <Button
                             variant={filter === "ALL" ? "default" : "ghost"}
                             size="sm"
@@ -167,7 +202,7 @@ export default function TicketsPage() {
                                         </td>
                                     </tr>
                                 ) : (
-                                    filteredTickets.map((ticket) => (
+                                    paginatedTickets.map((ticket) => (
                                         <tr key={ticket.id} className="border-b last:border-0 hover:bg-muted/50 transition-colors">
                                             <td className="px-4 py-3 font-mono text-xs">{ticket.id.split('-')[0]}</td>
                                             <td className="px-4 py-3 font-medium">{ticket.title}</td>
@@ -205,6 +240,14 @@ export default function TicketsPage() {
                                                     {actionLoading === `toggle-${ticket.id}` ? "Updating..." : `Mark ${ticket.status === "OPEN" ? "CLOSED" : "OPEN"}`}
                                                 </Button>
                                                 <Button
+                                                    variant="outline"
+                                                    size="icon"
+                                                    className="w-8 h-8"
+                                                    onClick={() => setSelectedTicket(ticket)}
+                                                >
+                                                    <Eye className="w-4 h-4" />
+                                                </Button>
+                                                <Button
                                                     variant="destructive"
                                                     size="icon"
                                                     className="w-8 h-8"
@@ -220,8 +263,45 @@ export default function TicketsPage() {
                             </tbody>
                         </table>
                     </div>
+
+                    {totalPages > 1 && (
+                        <div className="flex items-center justify-between mt-4">
+                            <p className="text-sm text-muted-foreground">
+                                Showing <span className="font-medium">{(currentPage - 1) * ITEMS_PER_PAGE + 1}</span> to <span className="font-medium">{Math.min(currentPage * ITEMS_PER_PAGE, filteredTickets.length)}</span> of <span className="font-medium">{filteredTickets.length}</span> results
+                            </p>
+                            <div className="flex items-center gap-2">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                    disabled={currentPage === 1}
+                                >
+                                    <ChevronLeft className="w-4 h-4 mr-1" />
+                                    Previous
+                                </Button>
+                                <div className="text-sm font-medium px-2">
+                                    Page {currentPage} of {totalPages}
+                                </div>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                                    disabled={currentPage === totalPages}
+                                >
+                                    Next
+                                    <ChevronRight className="w-4 h-4 ml-1" />
+                                </Button>
+                            </div>
+                        </div>
+                    )}
                 </CardContent>
             </Card>
+
+            <ViewTicketModal
+                ticket={selectedTicket}
+                isOpen={!!selectedTicket}
+                onClose={() => setSelectedTicket(null)}
+            />
         </div>
     );
 }

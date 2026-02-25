@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Trash2, RefreshCcw, Users } from "lucide-react";
+import { Trash2, RefreshCcw, Users, Eye, ChevronLeft, ChevronRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CreateTeamModal } from "@/components/CreateTeamModal";
+import { ViewTeamModal } from "@/components/ViewTeamModal";
+import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 
 type TeamMember = {
@@ -19,6 +21,11 @@ export default function TeamPage() {
     const [team, setTeam] = useState<TeamMember[]>([]);
     const [loading, setLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState<string | null>(null);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [currentPage, setCurrentPage] = useState(1);
+    const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
+
+    const ITEMS_PER_PAGE = 10;
 
     const fetchTeam = async () => {
         setLoading(true);
@@ -62,6 +69,25 @@ export default function TeamPage() {
         }
     };
 
+    const filteredTeam = team.filter((member) => {
+        const query = searchQuery.toLowerCase();
+        return (
+            member.name.toLowerCase().includes(query) ||
+            member.email.toLowerCase().includes(query)
+        );
+    });
+
+    const totalPages = Math.ceil(filteredTeam.length / ITEMS_PER_PAGE) || 1;
+    const paginatedTeam = filteredTeam.slice(
+        (currentPage - 1) * ITEMS_PER_PAGE,
+        currentPage * ITEMS_PER_PAGE
+    );
+
+    // Reset to page 1 when search changes
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchQuery]);
+
     return (
         <div className="p-8 max-w-7xl mx-auto space-y-6">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -69,7 +95,16 @@ export default function TeamPage() {
                     <h1 className="text-3xl font-bold tracking-tight">Team Management</h1>
                     <p className="text-muted-foreground mt-1">Manage support agents and their roles.</p>
                 </div>
-                <CreateTeamModal onSuccess={fetchTeam} />
+                <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
+                    <Input
+                        type="search"
+                        placeholder="Search team members..."
+                        className="w-full sm:w-64"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                    <CreateTeamModal onSuccess={fetchTeam} />
+                </div>
             </div>
 
             <Card>
@@ -108,7 +143,7 @@ export default function TeamPage() {
                                         </td>
                                     </tr>
                                 ) : (
-                                    team.map((member) => (
+                                    paginatedTeam.map((member) => (
                                         <tr key={member.id} className="border-b last:border-0 hover:bg-muted/50 transition-colors">
                                             <td className="px-4 py-3 font-medium flex items-center gap-3">
                                                 <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 text-primary font-bold">
@@ -122,7 +157,15 @@ export default function TeamPage() {
                                                     {member.role || "Agent"}
                                                 </span>
                                             </td>
-                                            <td className="px-4 py-3 text-right">
+                                            <td className="px-4 py-3 text-right space-x-2">
+                                                <Button
+                                                    variant="outline"
+                                                    size="icon"
+                                                    className="w-8 h-8"
+                                                    onClick={() => setSelectedMember(member)}
+                                                >
+                                                    <Eye className="w-4 h-4" />
+                                                </Button>
                                                 <Button
                                                     variant="destructive"
                                                     size="icon"
@@ -140,8 +183,45 @@ export default function TeamPage() {
                             </tbody>
                         </table>
                     </div>
+
+                    {totalPages > 1 && (
+                        <div className="flex items-center justify-between mt-4">
+                            <p className="text-sm text-muted-foreground">
+                                Showing <span className="font-medium">{(currentPage - 1) * ITEMS_PER_PAGE + 1}</span> to <span className="font-medium">{Math.min(currentPage * ITEMS_PER_PAGE, filteredTeam.length)}</span> of <span className="font-medium">{filteredTeam.length}</span> results
+                            </p>
+                            <div className="flex items-center gap-2">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                    disabled={currentPage === 1}
+                                >
+                                    <ChevronLeft className="w-4 h-4 mr-1" />
+                                    Previous
+                                </Button>
+                                <div className="text-sm font-medium px-2">
+                                    Page {currentPage} of {totalPages}
+                                </div>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                                    disabled={currentPage === totalPages}
+                                >
+                                    Next
+                                    <ChevronRight className="w-4 h-4 ml-1" />
+                                </Button>
+                            </div>
+                        </div>
+                    )}
                 </CardContent>
             </Card>
+
+            <ViewTeamModal
+                member={selectedMember}
+                isOpen={!!selectedMember}
+                onClose={() => setSelectedMember(null)}
+            />
         </div>
     );
 }

@@ -63,9 +63,9 @@ export default function DashboardLayout({
   return (
     <TooltipProvider>
       <SidebarProvider>
-        <Sidebar collapsible="icon" className="group-data-[collapsible=icon]:w-[80px]">
+        <Sidebar collapsible="offcanvas">
           <SidebarHeader>
-            <div className="flex items-center gap-2 px-2 py-6">
+            <div className="flex items-center group-data-[collapsible=icon]:justify-center gap-2 group-data-[collapsible=icon]:gap-0 px-2 group-data-[collapsible=icon]:px-0 py-6">
               <Image
                 src="/logo.png"
                 alt="Traccel"
@@ -73,14 +73,14 @@ export default function DashboardLayout({
                 height={70}
                 className="h-auto w-auto transition-all group-data-[collapsible=icon]:hidden"
               />
-              <div className="hidden group-data-[collapsible=icon]:flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground mx-auto">
-                <LayoutDashboard className="h-6 w-6" />
+              <div className="hidden group-data-[collapsible=icon]:flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground mx-auto">
+                <LayoutDashboard className="h-5 w-5" />
               </div>
             </div>
           </SidebarHeader>
           <SidebarContent>
             <SidebarGroup>
-              <SidebarGroupLabel className="text-sm font-bold px-4 mb-2 uppercase tracking-wider">
+              <SidebarGroupLabel className="text-sm font-bold px-4 mb-2 uppercase tracking-wider group-data-[collapsible=icon]:hidden">
                 Menu
               </SidebarGroupLabel>
               <SidebarGroupContent>
@@ -94,14 +94,14 @@ export default function DashboardLayout({
                           tooltip={item.title}
                           size="lg"
                           isActive={isActive}
-                          className={`px-4 py-6 text-base outline-none ring-0 border ${isActive
+                          className={`px-4 py-6 text-base outline-none ring-0 border group-data-[collapsible=icon]:!px-2 group-data-[collapsible=icon]:justify-center ${isActive
                             ? "bg-primary/5 border-primary text-primary font-bold hover:bg-primary/10 hover:text-primary"
                             : "border-transparent text-muted-foreground hover:bg-secondary/80 hover:text-foreground"
                             }`}
                         >
                           <Link href={item.url}>
                             <item.icon className={`size-5! ${isActive ? "text-primary" : "text-muted-foreground"}`} />
-                            <span className={isActive ? "font-bold" : "font-medium"}>{item.title}</span>
+                            <span className={`group-data-[collapsible=icon]:hidden ${isActive ? "font-bold" : "font-medium"}`}>{item.title}</span>
                           </Link>
                         </SidebarMenuButton>
                       </SidebarMenuItem>
@@ -111,11 +111,11 @@ export default function DashboardLayout({
               </SidebarGroupContent>
             </SidebarGroup>
           </SidebarContent>
-          <SidebarFooter className="p-4 border-t">
+          <SidebarFooter className="p-4 border-t group-data-[collapsible=icon]:p-2">
             <SidebarMenu className="gap-4">
               <SidebarMenuItem>
-                <div className="flex items-center gap-3 px-2 py-2 group-data-[collapsible=icon]:justify-center">
-                  <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                <div className="flex items-center gap-3 px-2 py-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
+                  <div className="h-10 w-10 group-data-[collapsible=icon]:h-8 group-data-[collapsible=icon]:w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                     <User className="h-5 w-5 text-primary" />
                   </div>
                   <div className="flex flex-col min-w-0 group-data-[collapsible=icon]:hidden">
@@ -129,10 +129,10 @@ export default function DashboardLayout({
                   onClick={logout}
                   tooltip="Logout"
                   size="lg"
-                  className="px-4 py-6 text-base text-destructive hover:text-destructive hover:bg-destructive/5"
+                  className="px-4 py-6 text-base text-destructive hover:text-destructive hover:bg-destructive/5 group-data-[collapsible=icon]:!px-2 group-data-[collapsible=icon]:justify-center w-full"
                 >
                   <LogOut className="size-5!" />
-                  <span className="font-medium">Logout</span>
+                  <span className="group-data-[collapsible=icon]:hidden font-medium">Logout</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>

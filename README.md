@@ -1,8 +1,23 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+This is a fullstack project with a Next.js frontend and a FastAPI (Python) backend.
 
 ## Getting Started
 
-First, run the development server:
+### 1. Run the Backend API Server
+
+First, you need to activate the virtual environment and start the FastAPI server on port 8000:
+
+```bash
+# Activate the virtual environment
+source venv/bin/activate
+
+# Start the FastAPI server
+uvicorn backend.main:app --reload
+```
+The API will be available at `http://localhost:8000/api/v1` and you can explore the API documentation at `http://localhost:8000/docs`.
+
+### 2. Run the Frontend Development Server
+
+Once the backend is running, open a new terminal tab and start the Next.js development server:
 
 ```bash
 npm run dev

@@ -10,6 +10,10 @@ class TicketBase(BaseModel):
     status: Optional[TicketStatus] = TicketStatus.OPEN
     priority: Optional[TicketPriority] = TicketPriority.MEDIUM
     assigned_to: Optional[UUID] = None
+    user_id: Optional[str] = None
+    tenant_id: Optional[str] = None
+    user_email: Optional[str] = None
+    source_app: Optional[str] = None
 
 class TicketCreate(TicketBase):
     pass
