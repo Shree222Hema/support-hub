@@ -39,7 +39,7 @@ export function CreateTicketModal({ onSuccess }: { onSuccess: () => void }) {
     useEffect(() => {
         if (open) {
             // Fetch team members when modal opens
-            fetch("http://127.0.0.1:8000/api/v1/team/")
+            fetch("/api/v1/team/")
                 .then((res) => res.json())
                 .then((data) => setTeamMembers(data))
                 .catch((err) => console.error("Failed to fetch team members", err));
@@ -58,7 +58,7 @@ export function CreateTicketModal({ onSuccess }: { onSuccess: () => void }) {
                 assigned_to: assignedTo !== "none" ? assignedTo : null,
             };
 
-            const res = await fetch("http://127.0.0.1:8000/api/v1/tickets/", {
+            const res = await fetch("/api/v1/tickets/", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload),
@@ -76,9 +76,9 @@ export function CreateTicketModal({ onSuccess }: { onSuccess: () => void }) {
                 toast.error("Failed to create ticket");
                 console.error("Failed to create ticket");
             }
-        } catch (err) {
+        } catch (error: unknown) {
             toast.error("An error occurred while creating the ticket");
-            console.error("Error creating ticket", err);
+            console.error("Error creating ticket", error);
         } finally {
             setLoading(false);
         }
@@ -126,6 +126,7 @@ export function CreateTicketModal({ onSuccess }: { onSuccess: () => void }) {
                         <div className="grid grid-cols-2 gap-4">
                             <div className="grid gap-2">
                                 <Label htmlFor="priority">Priority</Label>
+                                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                                 <Select value={priority} onValueChange={(val: any) => setPriority(val)}>
                                     <SelectTrigger id="priority">
                                         <SelectValue placeholder="Select priority" />

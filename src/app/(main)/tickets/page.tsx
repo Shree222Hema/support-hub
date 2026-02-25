@@ -37,7 +37,7 @@ export default function TicketsPage() {
     const fetchTickets = async () => {
         setLoading(true);
         try {
-            const res = await fetch("http://127.0.0.1:8000/api/v1/tickets/");
+            const res = await fetch("/api/v1/tickets/");
             if (res.ok) {
                 const data = await res.json();
                 setTickets(data);
@@ -58,7 +58,7 @@ export default function TicketsPage() {
         const newStatus = ticket.status === "OPEN" ? "CLOSED" : "OPEN";
         setActionLoading(`toggle-${ticket.id}`);
         try {
-            const res = await fetch(`http://127.0.0.1:8000/api/v1/tickets/${ticket.id}`, {
+            const res = await fetch(`/api/v1/tickets/${ticket.id}`, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
@@ -84,7 +84,7 @@ export default function TicketsPage() {
 
         setActionLoading(`delete-${id}`);
         try {
-            const res = await fetch(`http://127.0.0.1:8000/api/v1/tickets/${id}`, {
+            const res = await fetch(`/api/v1/tickets/${id}`, {
                 method: "DELETE",
             });
             if (res.ok) {
@@ -301,6 +301,12 @@ export default function TicketsPage() {
                 ticket={selectedTicket}
                 isOpen={!!selectedTicket}
                 onClose={() => setSelectedTicket(null)}
+                onSuccess={() => {
+                    fetchTickets();
+                    // Optionally update the local selectedTicket so the modal reflects the change immediately
+                    // Since fetchTickets is async and the modal might stay open, this is cleaner:
+                    setSelectedTicket(null);
+                }}
             />
         </div>
     );

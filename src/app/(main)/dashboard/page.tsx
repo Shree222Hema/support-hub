@@ -3,7 +3,7 @@ import { Ticket, CheckCircle2, AlertCircle, BarChart3 } from "lucide-react";
 
 async function getDashboardData() {
   try {
-    const res = await fetch("http://127.0.0.1:8000/api/v1/reports/summary", {
+    const res = await fetch("/api/v1/reports/summary", {
       cache: "no-store", // Always fetch fresh data natively Server Side
     });
 
@@ -12,19 +12,19 @@ async function getDashboardData() {
     }
 
     return res.json();
-  } catch (error) {
+  } catch {
     return null;
   }
 }
 
 async function getRecentTickets() {
   try {
-    const res = await fetch("http://127.0.0.1:8000/api/v1/tickets/?limit=4", {
+    const res = await fetch("/api/v1/tickets/?limit=4", {
       cache: "no-store",
     });
     if (!res.ok) return [];
     return res.json();
-  } catch (error) {
+  } catch {
     return [];
   }
 }
@@ -127,6 +127,7 @@ export default async function DashboardPage() {
                   No recent tickets found.
                 </p>
               ) : (
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 recentTickets.map((ticket: any) => (
                   <div key={ticket.id} className="flex items-center justify-between border-b border-blue-100 last:border-0 pb-3 last:pb-0">
                     <div className="space-y-1">
@@ -136,8 +137,8 @@ export default async function DashboardPage() {
                       </p>
                     </div>
                     <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${ticket.status === "OPEN"
-                        ? "bg-yellow-100/80 text-yellow-800"
-                        : "bg-green-100/80 text-green-800"
+                      ? "bg-yellow-100/80 text-yellow-800"
+                      : "bg-green-100/80 text-green-800"
                       }`}>
                       {ticket.status}
                     </span>

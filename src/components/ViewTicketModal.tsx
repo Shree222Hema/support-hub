@@ -1,4 +1,7 @@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 
@@ -20,9 +23,64 @@ interface ViewTicketModalProps {
     ticket: Ticket | null;
     isOpen: boolean;
     onClose: () => void;
+    onSuccess?: () => void;
 }
 
-export function ViewTicketModal({ ticket, isOpen, onClose }: ViewTicketModalProps) {
+type TeamMember = {
+    id: string;
+    name: string;
+    email: string;
+    role: string;
+};
+
+export function ViewTicketModal({ ticket, isOpen, onClose, onSuccess }: ViewTicketModalProps) {
+    const [team, setTeam] = useState<TeamMember[]>([]);
+    const [isUpdating, setIsUpdating] = useState(false);
+
+    useEffect(() => {
+        if (isOpen) {
+            fetchTeam();
+        }
+    }, [isOpen]);
+
+    const fetchTeam = async () => {
+        try {
+            const res = await fetch("/api/v1/team/");
+            if (res.ok) {
+                const data = await res.json();
+                setTeam(data);
+            }
+        } catch (error) {
+            console.error("Failed to fetch team", error);
+        }
+    };
+
+    const handleAssign = async (memberId: string) => {
+        if (!ticket) return;
+        setIsUpdating(true);
+        try {
+            const assigned_to = memberId === "unassigned" ? null : memberId;
+            const res = await fetch(`/api/v1/tickets/${ticket.id}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ assigned_to }),
+            });
+
+            if (res.ok) {
+                toast.success("Ticket reassigned successfully");
+                if (onSuccess) onSuccess();
+            } else {
+                toast.error("Failed to reassign ticket");
+            }
+        } catch (error) {
+            console.error("Error assigning ticket:", error);
+            toast.error("Error assigning ticket");
+        } finally {
+            setIsUpdating(false);
+        }
+    };
     if (!ticket) return null;
 
     return (
@@ -72,8 +130,24 @@ export function ViewTicketModal({ ticket, isOpen, onClose }: ViewTicketModalProp
                                 <p className="text-sm">{ticket.created_at ? format(new Date(ticket.created_at), "PPp") : "N/A"}</p>
                             </div>
                             <div className="space-y-1">
-                                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Assigned To</h4>
-                                <p className="text-sm font-mono">{ticket.assigned_to || "Unassigned"}</p>
+                                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Assigned To</h4>
+                                <Select
+                                    value={ticket.assigned_to || "unassigned"}
+                                    onValueChange={handleAssign}
+                                    disabled={isUpdating}
+                                >
+                                    <SelectTrigger className="h-8 text-sm">
+                                        <SelectValue placeholder="Select team member" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="unassigned">Unassigned</SelectItem>
+                                        {team.map((member) => (
+                                            <SelectItem key={member.id} value={member.id}>
+                                                {member.name} ({member.role || "Agent"})
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                             </div>
                         </div>
                     </div>

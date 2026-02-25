@@ -30,7 +30,7 @@ export default function TeamPage() {
     const fetchTeam = async () => {
         setLoading(true);
         try {
-            const res = await fetch("http://127.0.0.1:8000/api/v1/team/");
+            const res = await fetch("/api/v1/team/");
             if (res.ok) {
                 const data = await res.json();
                 setTeam(data);
@@ -52,7 +52,7 @@ export default function TeamPage() {
 
         setActionLoading(`delete-${id}`);
         try {
-            const res = await fetch(`http://127.0.0.1:8000/api/v1/team/${id}`, {
+            const res = await fetch(`/api/v1/team/${id}`, {
                 method: "DELETE",
             });
             if (res.ok) {
