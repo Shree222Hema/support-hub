@@ -9,6 +9,18 @@ import { CreateTeamModal } from "@/components/CreateTeamModal";
 import { ViewTeamModal } from "@/components/ViewTeamModal";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { useAuth } from "@/context/AuthContext";
+import { useRouter } from "next/navigation";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 type TeamMember = {
     id: string;
@@ -25,8 +37,17 @@ export default function TeamPage() {
     const [searchQuery, setSearchQuery] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
+    const [memberToDelete, setMemberToDelete] = useState<{ id: string, name: string } | null>(null);
+    const { user } = useAuth();
+    const router = useRouter();
 
     const ITEMS_PER_PAGE = 10;
+
+    useEffect(() => {
+        if (user && user.role !== "MANAGER") {
+            router.replace("/dashboard");
+        }
+    }, [user, router]);
 
     const fetchTeam = async () => {
         setLoading(true);
@@ -48,10 +69,12 @@ export default function TeamPage() {
         fetchTeam();
     }, []);
 
-    const deleteMember = async (id: string, name: string) => {
-        if (!confirm(`Are you sure you want to remove ${name} from the team? This action cannot be undone.`)) return;
+    const confirmDeleteMember = async () => {
+        if (!memberToDelete) return;
 
+        const { id, name } = memberToDelete;
         setActionLoading(`delete-${id}`);
+        setMemberToDelete(null); // Close modal immediately while loading
         try {
             const res = await fetch(`/api/v1/team/${id}`, {
                 method: "DELETE",
@@ -84,10 +107,13 @@ export default function TeamPage() {
         currentPage * ITEMS_PER_PAGE
     );
 
-    // Reset to page 1 when search changes
     useEffect(() => {
         setCurrentPage(1);
     }, [searchQuery]);
+
+    if (!user || user.role !== "MANAGER") {
+        return null; // Don't render anything while redirecting
+    }
 
     return (
         <div className="p-8 max-w-7xl mx-auto space-y-6">
@@ -177,7 +203,7 @@ export default function TeamPage() {
                                                     variant="destructive"
                                                     size="icon"
                                                     className="w-8 h-8"
-                                                    onClick={() => deleteMember(member.id, member.name)}
+                                                    onClick={() => setMemberToDelete({ id: member.id, name: member.name })}
                                                     title="Remove Member"
                                                     disabled={actionLoading === `delete-${member.id}`}
                                                 >
@@ -229,6 +255,24 @@ export default function TeamPage() {
                 isOpen={!!selectedMember}
                 onClose={() => setSelectedMember(null)}
             />
+
+            <AlertDialog open={!!memberToDelete} onOpenChange={(open) => !open && setMemberToDelete(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This will permanently remove <strong>{memberToDelete?.name}</strong> from the team.
+                            They will lose all assigned access and permissions. This action cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={!!actionLoading}>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmDeleteMember} className="bg-destructive hover:bg-destructive/90 text-destructive-foreground">
+                            Remove Member
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

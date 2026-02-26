@@ -85,28 +85,36 @@ export default function DashboardLayout({
               </SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu className="gap-2">
-                  {data.navMain.map((item) => {
-                    const isActive = pathname === item.url || pathname.startsWith(`${item.url}/`);
-                    return (
-                      <SidebarMenuItem key={item.title}>
-                        <SidebarMenuButton
-                          asChild
-                          tooltip={item.title}
-                          size="lg"
-                          isActive={isActive}
-                          className={`px-4 py-6 text-base outline-none ring-0 border group-data-[collapsible=icon]:!px-2 group-data-[collapsible=icon]:justify-center ${isActive
-                            ? "bg-primary/5 border-primary text-primary font-bold hover:bg-primary/10 hover:text-primary"
-                            : "border-transparent text-muted-foreground hover:bg-secondary/80 hover:text-foreground"
-                            }`}
-                        >
-                          <Link href={item.url}>
-                            <item.icon className={`size-5! ${isActive ? "text-primary" : "text-muted-foreground"}`} />
-                            <span className={`group-data-[collapsible=icon]:hidden ${isActive ? "font-bold" : "font-medium"}`}>{item.title}</span>
-                          </Link>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    );
-                  })}
+                  {data.navMain
+                    .filter(item => {
+                      // Only show 'Team' if the user is a MANAGER
+                      if (item.title === 'Team') {
+                        return user?.role === 'MANAGER';
+                      }
+                      return true;
+                    })
+                    .map((item) => {
+                      const isActive = pathname === item.url || pathname.startsWith(`${item.url}/`);
+                      return (
+                        <SidebarMenuItem key={item.title}>
+                          <SidebarMenuButton
+                            asChild
+                            tooltip={item.title}
+                            size="lg"
+                            isActive={isActive}
+                            className={`px-4 py-6 text-base outline-none ring-0 border group-data-[collapsible=icon]:!px-2 group-data-[collapsible=icon]:justify-center ${isActive
+                              ? "bg-primary/5 border-primary text-primary font-bold hover:bg-primary/10 hover:text-primary"
+                              : "border-transparent text-muted-foreground hover:bg-secondary/80 hover:text-foreground"
+                              }`}
+                          >
+                            <Link href={item.url}>
+                              <item.icon className={`size-5! ${isActive ? "text-primary" : "text-muted-foreground"}`} />
+                              <span className={`group-data-[collapsible=icon]:hidden ${isActive ? "font-bold" : "font-medium"}`}>{item.title}</span>
+                            </Link>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                      );
+                    })}
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
