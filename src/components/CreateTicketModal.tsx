@@ -35,6 +35,7 @@ export function CreateTicketModal({ onSuccess }: { onSuccess: () => void }) {
     const [assignedTo, setAssignedTo] = useState<string>("none");
     const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
     const [loading, setLoading] = useState(false);
+    const [files, setFiles] = useState<FileList | null>(null);
 
     useEffect(() => {
         if (open) {
@@ -50,18 +51,23 @@ export function CreateTicketModal({ onSuccess }: { onSuccess: () => void }) {
         e.preventDefault();
         setLoading(true);
         try {
-            const payload = {
-                title,
-                description,
-                priority,
-                // Only include assigned_to if it's not "none"
-                assigned_to: assignedTo !== "none" ? assignedTo : null,
-            };
+            const formData = new FormData();
+            formData.append("title", title);
+            formData.append("description", description);
+            formData.append("priority", priority);
+            if (assignedTo !== "none") {
+                formData.append("assigned_to", assignedTo);
+            }
+
+            if (files) {
+                for (let i = 0; i < files.length; i++) {
+                    formData.append("file", files[i]);
+                }
+            }
 
             const res = await fetch("/api/v1/tickets/", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload),
+                body: formData,
             });
 
             if (res.ok) {
@@ -70,11 +76,12 @@ export function CreateTicketModal({ onSuccess }: { onSuccess: () => void }) {
                 setDescription("");
                 setPriority("MEDIUM");
                 setAssignedTo("none");
+                setFiles(null);
                 toast.success("Ticket created successfully!");
                 onSuccess();
             } else {
-                toast.error("Failed to create ticket");
-                console.error("Failed to create ticket");
+                const errorData = await res.json();
+                toast.error(errorData.error || "Failed to create ticket");
             }
         } catch (error: unknown) {
             toast.error("An error occurred while creating the ticket");
@@ -154,6 +161,22 @@ export function CreateTicketModal({ onSuccess }: { onSuccess: () => void }) {
                                     </SelectContent>
                                 </Select>
                             </div>
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="files">Attachments (Max 20MB each)</Label>
+                            <Input
+                                id="files"
+                                type="file"
+                                multiple
+                                onChange={(e) => setFiles(e.target.files)}
+                                accept="image/*,application/pdf"
+                                className="cursor-pointer"
+                            />
+                            {files && files.length > 0 && (
+                                <p className="text-xs text-muted-foreground">
+                                    {files.length} file(s) selected
+                                </p>
+                            )}
                         </div>
                     </div>
                     <DialogFooter>

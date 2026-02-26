@@ -17,7 +17,6 @@ import { useAuth } from "@/context/AuthContext";
 
 function LoginContent() {
   const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -32,12 +31,12 @@ function LoginContent() {
     setError("");
     setLoading(true);
 
-    const success = await login(username, password);
+    const success = await login(username);
 
     if (success) {
       router.push(callbackUrl);
     } else {
-      setError("Invalid username or password");
+      setError("Invalid username or email. Please check your credentials.");
     }
     setLoading(false);
   };
@@ -59,32 +58,20 @@ function LoginContent() {
           <CardHeader>
             <CardTitle className="text-2xl">Login</CardTitle>
             <CardDescription>
-              Enter your credentials to login to your account
+              Enter your Name or Email to login to your account
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleLogin}>
               <div className="flex flex-col gap-6">
                 <div className="grid gap-2">
-                  <Label htmlFor="username">Username</Label>
+                  <Label htmlFor="username">Name or Email</Label>
                   <Input
                     id="username"
                     type="text"
-                    placeholder="admin"
+                    placeholder="Enter your name or email"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <div className="flex items-center">
-                    <Label htmlFor="password">Password</Label>
-                  </div>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
                     required
                   />
                 </div>

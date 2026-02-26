@@ -7,6 +7,10 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
         const ticketId = (await context.params).id;
         const ticket = await prisma.ticket.findUnique({
             where: { id: ticketId },
+            include: {
+                attachments: true,
+                team_member: true
+            }
         });
 
         if (!ticket) {
@@ -35,7 +39,7 @@ export async function PUT(request: Request, context: { params: Promise<{ id: str
         // Only update fields provided in the body
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const updateData: any = {};
-        const allowedFields = ['title', 'description', 'status', 'priority', 'assigned_to'];
+        const allowedFields = ['title', 'description', 'state', 'priority', 'assigned_to'];
         for (const field of allowedFields) {
             if (body[field] !== undefined) {
                 updateData[field] = body[field];
@@ -71,24 +75,3 @@ export async function PUT(request: Request, context: { params: Promise<{ id: str
     }
 }
 
-export async function DELETE(request: Request, context: { params: Promise<{ id: string }> }) {
-    try {
-        const ticketId = (await context.params).id;
-
-        // Check if ticket exists first
-        const ticket = await prisma.ticket.findUnique({ where: { id: ticketId } });
-        if (!ticket) {
-            return NextResponse.json({ detail: "Ticket not found" }, { status: 404 });
-        }
-
-        await prisma.ticket.delete({
-            where: { id: ticketId },
-        });
-
-        // 204 No Content for successful deletion (same as FastAPI)
-        return new NextResponse(null, { status: 204 });
-    } catch (error) {
-        console.error("Failed to delete ticket", error);
-        return NextResponse.json({ error: "Failed to delete ticket" }, { status: 500 });
-    }
-}

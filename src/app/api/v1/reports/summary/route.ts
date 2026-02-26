@@ -5,8 +5,8 @@ export async function GET() {
     try {
         const totalTickets = await prisma.ticket.count();
 
-        const statusCounts = await prisma.ticket.groupBy({
-            by: ['status'],
+        const stateCounts = await prisma.ticket.groupBy({
+            by: ['state'],
             _count: {
                 id: true,
             },
@@ -19,8 +19,16 @@ export async function GET() {
             },
         });
 
-        const openTickets = statusCounts.find(s => s.status === 'OPEN')?._count.id || 0;
-        const closedTickets = statusCounts.find(s => s.status === 'CLOSED')?._count.id || 0;
+        const stateBreakdown: Record<string, number> = {
+            OPEN: 0,
+            IN_PROGRESS: 0,
+            UNDER_PROGRESS: 0,
+            COMPLETED: 0,
+            CLOSED: 0
+        };
+        stateCounts.forEach(s => {
+            stateBreakdown[s.state] = s._count.id;
+        });
 
         const priorityBreakdown: Record<string, number> = {};
         priorityCounts.forEach(p => {
@@ -29,9 +37,11 @@ export async function GET() {
 
         return NextResponse.json({
             total_tickets: totalTickets,
-            open_tickets: openTickets,
-            closed_tickets: closedTickets,
+            state_breakdown: stateBreakdown,
             priority_breakdown: priorityBreakdown,
+            // Keep legacy fields for backward compatibility if needed, but updated
+            open_tickets: stateBreakdown.OPEN,
+            closed_tickets: stateBreakdown.CLOSED,
         });
     } catch (error) {
         console.error("Failed to fetch report summary", error);

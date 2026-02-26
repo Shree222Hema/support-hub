@@ -6,8 +6,8 @@ async function getDashboardData() {
   try {
     const totalTickets = await prisma.ticket.count();
 
-    const statusCounts = await prisma.ticket.groupBy({
-      by: ['status'],
+    const stateCounts = await prisma.ticket.groupBy({
+      by: ['state'],
       _count: { id: true },
     });
 
@@ -16,8 +16,9 @@ async function getDashboardData() {
       _count: { id: true },
     });
 
-    const openTickets = statusCounts.find(s => s.status === 'OPEN')?._count.id || 0;
-    const closedTickets = statusCounts.find(s => s.status === 'CLOSED')?._count.id || 0;
+    const openTickets = stateCounts.find(s => s.state === 'OPEN')?._count.id || 0;
+    const inProgressTickets = stateCounts.find(s => s.state === 'IN_PROGRESS')?._count.id || 0;
+    const closedTickets = stateCounts.find(s => s.state === 'CLOSED')?._count.id || 0;
 
     const priorityBreakdown: Record<string, number> = {};
     priorityCounts.forEach(p => {
@@ -27,6 +28,7 @@ async function getDashboardData() {
     return {
       total_tickets: totalTickets,
       open_tickets: openTickets,
+      in_progress_tickets: inProgressTickets,
       closed_tickets: closedTickets,
       priority_breakdown: priorityBreakdown,
     };
@@ -73,7 +75,7 @@ export default async function DashboardPage() {
         </p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-4">
         {/* Total Tickets Card */}
         <Card className="shadow-sm hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -82,31 +84,43 @@ export default async function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-4xl font-extrabold">{data.total_tickets}</div>
-            <p className="text-xs text-muted-foreground mt-1">Across all statuses</p>
+            <p className="text-xs text-muted-foreground mt-1">Across all states</p>
           </CardContent>
         </Card>
 
         {/* Open Tickets Card */}
         <Card className="shadow-sm hover:shadow-md transition-shadow border-yellow-200">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Open Tickets</CardTitle>
+            <CardTitle className="text-sm font-medium">Open</CardTitle>
             <AlertCircle className="h-5 w-5 text-yellow-600" />
           </CardHeader>
           <CardContent>
             <div className="text-4xl font-extrabold text-yellow-700">{data.open_tickets}</div>
-            <p className="text-xs text-muted-foreground mt-1">Requires immediate attention</p>
+            <p className="text-xs text-muted-foreground mt-1">New requests</p>
+          </CardContent>
+        </Card>
+
+        {/* In Progress Card */}
+        <Card className="shadow-sm hover:shadow-md transition-shadow border-blue-200">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">In Progress</CardTitle>
+            <BarChart3 className="h-5 w-5 text-blue-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-4xl font-extrabold text-blue-700">{data.in_progress_tickets}</div>
+            <p className="text-xs text-muted-foreground mt-1">Being worked on</p>
           </CardContent>
         </Card>
 
         {/* Closed Tickets Card */}
         <Card className="shadow-sm hover:shadow-md transition-shadow border-green-200">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Closed Tickets</CardTitle>
+            <CardTitle className="text-sm font-medium">Closed</CardTitle>
             <CheckCircle2 className="h-5 w-5 text-green-600" />
           </CardHeader>
           <CardContent>
             <div className="text-4xl font-extrabold text-green-700">{data.closed_tickets}</div>
-            <p className="text-xs text-muted-foreground mt-1">Issues successfully resolved</p>
+            <p className="text-xs text-muted-foreground mt-1">Resolved issues</p>
           </CardContent>
         </Card>
       </div>
@@ -154,11 +168,13 @@ export default async function DashboardPage() {
                         {new Date(ticket.created_at).toLocaleString()}
                       </p>
                     </div>
-                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${ticket.status === "OPEN"
-                      ? "bg-yellow-100/80 text-yellow-800"
-                      : "bg-green-100/80 text-green-800"
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${ticket.state === "OPEN" ? "bg-yellow-100/80 text-yellow-800" :
+                        ticket.state === "IN_PROGRESS" ? "bg-blue-100/80 text-blue-800" :
+                          ticket.state === "UNDER_PROGRESS" ? "bg-orange-100/80 text-orange-800" :
+                            ticket.state === "COMPLETED" ? "bg-purple-100/80 text-purple-800" :
+                              "bg-green-100/80 text-green-800"
                       }`}>
-                      {ticket.status}
+                      {ticket.state.replace('_', ' ')}
                     </span>
                   </div>
                 ))

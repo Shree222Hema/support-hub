@@ -21,25 +21,30 @@ export async function POST(request: Request) {
         const body = await request.json();
         const id = uuidv4();
 
+        const role = body.role || "USER";
+        console.log(`Creating team member: name=${body.name}, email=${body.email}, role=${role} (type: ${typeof role})`);
+
         // The name and email and role come from the request body
         const newMember = await prisma.teamMember.create({
             data: {
                 id,
                 name: body.name,
                 email: body.email,
-                role: body.role,
+                role: role as any,
             }
         });
 
         return NextResponse.json(newMember, { status: 201 });
-    } catch (error: unknown) {
+    } catch (error: any) {
         console.error("Failed to create team member", error);
         // Rough equivalent of FastAPI catching IntegrityError for unique constraints
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const err = error as any;
-        if (err.code === 'P2002') {
+        if (error.code === 'P2002') {
             return NextResponse.json({ detail: "Email already registered." }, { status: 400 });
         }
-        return NextResponse.json({ error: "Failed to create team member" }, { status: 400 });
+        return NextResponse.json({
+            error: "Failed to create team member",
+            details: error.message,
+            code: error.code
+        }, { status: 400 });
     }
 }

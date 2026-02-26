@@ -1,6 +1,13 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import {
     Dialog,
     DialogContent,
     DialogDescription,
@@ -18,7 +25,7 @@ export function CreateTeamModal({ onSuccess }: { onSuccess: () => void }) {
     const [open, setOpen] = useState(false);
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
-    const [role, setRole] = useState("Agent");
+    const [role, setRole] = useState("USER");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
 
@@ -44,7 +51,7 @@ export function CreateTeamModal({ onSuccess }: { onSuccess: () => void }) {
                 setOpen(false);
                 setName("");
                 setEmail("");
-                setRole("Agent");
+                setRole("USER");
                 toast.success(`${name} added to the team!`);
                 onSuccess();
             } else {
@@ -101,14 +108,16 @@ export function CreateTeamModal({ onSuccess }: { onSuccess: () => void }) {
                             />
                         </div>
                         <div className="grid gap-2">
-                            <Label htmlFor="role">Role / Job Title</Label>
-                            <Input
-                                id="role"
-                                value={role}
-                                onChange={(e) => setRole(e.target.value)}
-                                placeholder="Senior Support Agent"
-                                required
-                            />
+                            <Label htmlFor="role">Role</Label>
+                            <Select value={role} onValueChange={setRole}>
+                                <SelectTrigger id="role" className="w-full">
+                                    <SelectValue placeholder="Select role" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="USER">User (Standard Agent)</SelectItem>
+                                    <SelectItem value="MANAGER">Manager (Full Access)</SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
                         {error && <p className="text-sm text-red-500 font-medium">{error}</p>}
                     </div>

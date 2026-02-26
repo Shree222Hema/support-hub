@@ -9,7 +9,7 @@ type Ticket = {
     id: string;
     title: string;
     description: string;
-    status: "OPEN" | "CLOSED";
+    state: "OPEN" | "IN_PROGRESS" | "UNDER_PROGRESS" | "COMPLETED" | "CLOSED";
     priority: "LOW" | "MEDIUM" | "HIGH";
     assigned_to: string | null;
     user_id: string | null;
@@ -92,12 +92,14 @@ export function ViewTicketModal({ ticket, isOpen, onClose, onSuccess }: ViewTick
                             {ticket.title}
                         </DialogTitle>
                         <div className="flex gap-2 shrink-0">
-                            <Badge variant={ticket.status === "OPEN" ? "default" : "secondary"} className={
-                                ticket.status === "OPEN"
-                                    ? "bg-yellow-100 text-yellow-800 hover:bg-yellow-100 dark:bg-yellow-900/30 dark:text-yellow-500"
-                                    : "bg-green-100 text-green-800 hover:bg-green-100 dark:bg-green-900/30 dark:text-green-500"
+                            <Badge variant={ticket.state === "OPEN" ? "default" : "secondary"} className={
+                                ticket.state === "OPEN" ? "bg-yellow-100 text-yellow-800 hover:bg-yellow-100 dark:bg-yellow-900/30 dark:text-yellow-500" :
+                                    ticket.state === "IN_PROGRESS" ? "bg-blue-100 text-blue-800 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-500" :
+                                        ticket.state === "UNDER_PROGRESS" ? "bg-orange-100 text-orange-800 hover:bg-orange-100 dark:bg-orange-900/30 dark:text-orange-500" :
+                                            ticket.state === "COMPLETED" ? "bg-purple-100 text-purple-800 hover:bg-purple-100 dark:bg-purple-900/30 dark:text-purple-500" :
+                                                "bg-green-100 text-green-800 hover:bg-green-100 dark:bg-green-900/30 dark:text-green-500"
                             }>
-                                {ticket.status}
+                                {ticket.state.replace('_', ' ')}
                             </Badge>
                             <Badge variant="outline" className={
                                 ticket.priority === "HIGH"

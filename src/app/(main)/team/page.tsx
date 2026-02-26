@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Trash2, RefreshCcw, Users, Eye, ChevronLeft, ChevronRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { CreateTeamModal } from "@/components/CreateTeamModal";
 import { ViewTeamModal } from "@/components/ViewTeamModal";
 import { Input } from "@/components/ui/input";
@@ -153,9 +154,15 @@ export default function TeamPage() {
                                             </td>
                                             <td className="px-4 py-3 text-muted-foreground">{member.email}</td>
                                             <td className="px-4 py-3">
-                                                <span className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-500 px-2 py-1 rounded-full text-xs font-semibold">
-                                                    {member.role || "Agent"}
-                                                </span>
+                                                {member.role === "MANAGER" ? (
+                                                    <Badge className="bg-purple-100 text-purple-800 hover:bg-purple-100 border-purple-200">
+                                                        Manager
+                                                    </Badge>
+                                                ) : (
+                                                    <Badge variant="secondary" className="bg-blue-50 text-blue-700 hover:bg-blue-50 border-blue-100">
+                                                        User
+                                                    </Badge>
+                                                )}
                                             </td>
                                             <td className="px-4 py-3 text-right space-x-2">
                                                 <Button

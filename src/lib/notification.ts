@@ -9,7 +9,7 @@ export function sendNewTicketNotification(ticket: any) {
     }
 
     const message = {
-        text: `🎫 *New Ticket Created*\n\n*ID:* ${ticket.id}\n*Title:* ${ticket.title}\n*Priority:* ${ticket.priority}\n*Status:* ${ticket.status}`,
+        text: `🎫 *New Ticket Created*\n\n*ID:* ${ticket.id}\n*Title:* ${ticket.title}\n*Priority:* ${ticket.priority}\n*State:* ${ticket.state}`,
     };
 
     // Fire and forget

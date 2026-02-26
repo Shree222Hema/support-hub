@@ -2,18 +2,21 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Trash2, RefreshCcw, Ticket as TicketIcon, Eye, ChevronLeft, ChevronRight } from "lucide-react";
+import { RefreshCcw, Ticket as TicketIcon, Eye, ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CreateTicketModal } from "@/components/CreateTicketModal";
 import { toast } from "sonner";
+import { useAuth } from "@/context/AuthContext";
 import { ViewTicketModal } from "@/components/ViewTicketModal";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import Link from "next/link";
 
 export type Ticket = {
     id: string;
     title: string;
     description: string;
-    status: "OPEN" | "CLOSED";
+    state: "OPEN" | "IN_PROGRESS" | "UNDER_PROGRESS" | "COMPLETED" | "CLOSED";
     priority: "LOW" | "MEDIUM" | "HIGH";
     assigned_to: string | null;
     user_id: string | null;
@@ -23,21 +26,39 @@ export type Ticket = {
     created_at: string;
 };
 
+type TeamMember = {
+    id: string;
+    name: string;
+};
+
 export default function TicketsPage() {
     const [tickets, setTickets] = useState<Ticket[]>([]);
     const [loading, setLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState<string | null>(null);
-    const [filter, setFilter] = useState<"ALL" | "OPEN" | "CLOSED">("ALL");
+    const [filters, setFilters] = useState({
+        state: "ALL",
+        priority: "ALL"
+    });
     const [searchQuery, setSearchQuery] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
+    const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
 
     const ITEMS_PER_PAGE = 10;
+
+    const { user } = useAuth();
 
     const fetchTickets = async () => {
         setLoading(true);
         try {
-            const res = await fetch("/api/v1/tickets/");
+            const params = new URLSearchParams();
+            if (filters.state !== "ALL") params.append("state", filters.state);
+            if (user) {
+                params.append("user_id", user.id);
+                params.append("role", user.role);
+            }
+
+            const res = await fetch(`/api/v1/tickets/?${params.toString()}`);
             if (res.ok) {
                 const data = await res.json();
                 setTickets(data);
@@ -50,26 +71,38 @@ export default function TicketsPage() {
         }
     };
 
+    const fetchTeamMembers = async () => {
+        try {
+            const res = await fetch("/api/v1/team/");
+            if (res.ok) {
+                const data = await res.json();
+                setTeamMembers(data);
+            }
+        } catch (error) {
+            console.error("Failed to fetch team members", error);
+        }
+    };
+
     useEffect(() => {
         fetchTickets();
+        fetchTeamMembers();
     }, []);
 
-    const toggleStatus = async (ticket: Ticket) => {
-        const newStatus = ticket.status === "OPEN" ? "CLOSED" : "OPEN";
-        setActionLoading(`toggle-${ticket.id}`);
+    const updateState = async (ticket: Ticket, newState: Ticket["state"]) => {
+        setActionLoading(`state-${ticket.id}`);
         try {
             const res = await fetch(`/api/v1/tickets/${ticket.id}`, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify({ status: newStatus }),
+                body: JSON.stringify({ state: newState }),
             });
             if (res.ok) {
-                toast.success(`Ticket marked as ${newStatus}`);
-                fetchTickets(); // Refresh list to get updated data
+                toast.success(`Ticket state updated to ${newState}`);
+                fetchTickets();
             } else {
-                toast.error("Failed to update ticket status");
+                toast.error("Failed to update ticket state");
             }
         } catch (error) {
             console.error("Failed to update ticket", error);
@@ -79,35 +112,39 @@ export default function TicketsPage() {
         }
     };
 
-    const deleteTicket = async (id: string) => {
-        if (!confirm("Are you sure you want to delete this ticket?")) return;
-
-        setActionLoading(`delete-${id}`);
+    const updateAssignment = async (ticket: Ticket, newAssigneeId: string) => {
+        setActionLoading(`assign-${ticket.id}`);
         try {
-            const res = await fetch(`/api/v1/tickets/${id}`, {
-                method: "DELETE",
+            const res = await fetch(`/api/v1/tickets/${ticket.id}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ assigned_to: newAssigneeId === "none" ? null : newAssigneeId }),
             });
             if (res.ok) {
-                toast.success("Ticket deleted successfully");
+                toast.success(`Ticket assigned successfully`);
                 fetchTickets();
             } else {
-                toast.error("Failed to delete ticket");
+                toast.error("Failed to update ticket assignment");
             }
         } catch (error) {
-            console.error("Failed to delete ticket", error);
-            toast.error("An error occurred while deleting the ticket");
+            console.error("Failed to update ticket", error);
+            toast.error("An error occurred while updating the ticket");
         } finally {
             setActionLoading(null);
         }
     };
 
+
     const filteredTickets = tickets.filter((ticket) => {
-        const matchesFilter = filter === "ALL" ? true : ticket.status === filter;
+        const matchesState = filters.state === "ALL" ? true : ticket.state === filters.state;
+        const matchesPriority = filters.priority === "ALL" ? true : ticket.priority === filters.priority;
         const matchesSearch =
             ticket.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
             ticket.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
             (ticket.description && ticket.description.toLowerCase().includes(searchQuery.toLowerCase()));
-        return matchesFilter && matchesSearch;
+        return matchesState && matchesPriority && matchesSearch;
     });
 
     const totalPages = Math.ceil(filteredTickets.length / ITEMS_PER_PAGE) || 1;
@@ -119,7 +156,7 @@ export default function TicketsPage() {
     // Reset to page 1 when search or filter changes
     useEffect(() => {
         setCurrentPage(1);
-    }, [searchQuery, filter]);
+    }, [searchQuery, filters]);
 
     return (
         <div className="p-8 max-w-7xl mx-auto space-y-6">
@@ -128,7 +165,7 @@ export default function TicketsPage() {
                     <h1 className="text-3xl font-bold tracking-tight">Tickets</h1>
                     <p className="text-muted-foreground mt-1">Manage and track all support requests.</p>
                 </div>
-                <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
+                <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
                     <Input
                         type="search"
                         placeholder="Search tickets..."
@@ -136,28 +173,32 @@ export default function TicketsPage() {
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
-                    <div className="flex bg-secondary p-1 rounded-lg shrink-0">
-                        <Button
-                            variant={filter === "ALL" ? "default" : "ghost"}
-                            size="sm"
-                            onClick={() => setFilter("ALL")}
-                        >
-                            All
-                        </Button>
-                        <Button
-                            variant={filter === "OPEN" ? "default" : "ghost"}
-                            size="sm"
-                            onClick={() => setFilter("OPEN")}
-                        >
-                            Open
-                        </Button>
-                        <Button
-                            variant={filter === "CLOSED" ? "default" : "ghost"}
-                            size="sm"
-                            onClick={() => setFilter("CLOSED")}
-                        >
-                            Closed
-                        </Button>
+                    <div className="flex items-center gap-2">
+                        <Select value={filters.state} onValueChange={(val) => setFilters(f => ({ ...f, state: val }))}>
+                            <SelectTrigger className="w-[140px] h-9">
+                                <SelectValue placeholder="State" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="ALL">All States</SelectItem>
+                                <SelectItem value="OPEN">Open</SelectItem>
+                                <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
+                                <SelectItem value="UNDER_PROGRESS">Under Progress</SelectItem>
+                                <SelectItem value="COMPLETED">Completed</SelectItem>
+                                <SelectItem value="CLOSED">Closed</SelectItem>
+                            </SelectContent>
+                        </Select>
+
+                        <Select value={filters.priority} onValueChange={(val) => setFilters(f => ({ ...f, priority: val }))}>
+                            <SelectTrigger className="w-[130px] h-9">
+                                <SelectValue placeholder="Priority" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="ALL">All Priorities</SelectItem>
+                                <SelectItem value="LOW">Low</SelectItem>
+                                <SelectItem value="MEDIUM">Medium</SelectItem>
+                                <SelectItem value="HIGH">High</SelectItem>
+                            </SelectContent>
+                        </Select>
                     </div>
                     <CreateTicketModal onSuccess={fetchTickets} />
                 </div>
@@ -177,7 +218,7 @@ export default function TicketsPage() {
                                 <tr>
                                     <th className="px-4 py-3 border-r">ID (Abbr.)</th>
                                     <th className="px-4 py-3 border-r">Title</th>
-                                    <th className="px-4 py-3 border-r">Status</th>
+                                    <th className="px-4 py-3 border-r">State</th>
                                     <th className="px-4 py-3 border-r">Priority</th>
                                     <th className="px-4 py-3 border-r">Assigned To</th>
                                     <th className="px-4 py-3 border-r">Created At</th>
@@ -205,13 +246,19 @@ export default function TicketsPage() {
                                     paginatedTickets.map((ticket) => (
                                         <tr key={ticket.id} className="border-b last:border-0 hover:bg-muted/50 transition-colors">
                                             <td className="px-4 py-3 font-mono text-xs">{ticket.id.split('-')[0]}</td>
-                                            <td className="px-4 py-3 font-medium">{ticket.title}</td>
+                                            <td className="px-4 py-3 font-medium">
+                                                <Link href={`/tickets/${ticket.id}`} className="text-blue-600 hover:underline">
+                                                    {ticket.title}
+                                                </Link>
+                                            </td>
                                             <td className="px-4 py-3">
-                                                <span className={`px-2 py-1 rounded-full text-xs font-semibold ${ticket.status === "OPEN"
-                                                    ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-500"
-                                                    : "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-500"
+                                                <span className={`px-2 py-1 rounded-full text-xs font-semibold ${ticket.state === "OPEN" ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-500" :
+                                                    ticket.state === "IN_PROGRESS" ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-500" :
+                                                        ticket.state === "UNDER_PROGRESS" ? "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-500" :
+                                                            ticket.state === "COMPLETED" ? "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-500" :
+                                                                "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-500"
                                                     }`}>
-                                                    {ticket.status}
+                                                    {ticket.state.replace('_', ' ')}
                                                 </span>
                                             </td>
                                             <td className="px-4 py-3">
@@ -224,20 +271,54 @@ export default function TicketsPage() {
                                                     {ticket.priority}
                                                 </span>
                                             </td>
-                                            <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
-                                                {ticket.assigned_to ? ticket.assigned_to.split("-")[0] : "Unassigned"}
+                                            <td className="px-4 py-3">
+                                                <Select
+                                                    value={ticket.assigned_to || "none"}
+                                                    onValueChange={(val) => updateAssignment(ticket, val)}
+                                                    disabled={actionLoading === `assign-${ticket.id}`}
+                                                >
+                                                    <SelectTrigger className="h-8 w-[130px] text-xs bg-transparent border-dashed hover:border-solid transition-all">
+                                                        <SelectValue placeholder="Assign To..." />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="none">Unassigned</SelectItem>
+                                                        {teamMembers.map((member) => (
+                                                            <SelectItem key={member.id} value={member.id}>
+                                                                {member.name}
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
                                             </td>
                                             <td className="px-4 py-3 text-muted-foreground">
                                                 {new Date(ticket.created_at).toLocaleDateString()}
                                             </td>
-                                            <td className="px-4 py-3 text-right space-x-2">
+                                            <td className="px-4 py-3 text-right flex items-center justify-end gap-2">
+                                                <Select
+                                                    value={ticket.state}
+                                                    onValueChange={(val: Ticket["state"]) => updateState(ticket, val)}
+                                                    disabled={actionLoading === `state-${ticket.id}`}
+                                                >
+                                                    <SelectTrigger className="h-8 w-[140px] text-xs">
+                                                        <SelectValue />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="OPEN">Open</SelectItem>
+                                                        <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
+                                                        <SelectItem value="UNDER_PROGRESS">Under Progress</SelectItem>
+                                                        <SelectItem value="COMPLETED">Completed</SelectItem>
+                                                        <SelectItem value="CLOSED">Closed</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
                                                 <Button
                                                     variant="outline"
-                                                    size="sm"
-                                                    onClick={() => toggleStatus(ticket)}
-                                                    disabled={actionLoading === `toggle-${ticket.id}` || actionLoading === `delete-${ticket.id}`}
+                                                    size="icon"
+                                                    className="w-8 h-8"
+                                                    asChild
                                                 >
-                                                    {actionLoading === `toggle-${ticket.id}` ? "Updating..." : `Mark ${ticket.status === "OPEN" ? "CLOSED" : "OPEN"}`}
+                                                    <Link href={`/tickets/${ticket.id}`}>
+                                                        <ExternalLink className="w-4 h-4" />
+                                                    </Link>
                                                 </Button>
                                                 <Button
                                                     variant="outline"
@@ -246,15 +327,6 @@ export default function TicketsPage() {
                                                     onClick={() => setSelectedTicket(ticket)}
                                                 >
                                                     <Eye className="w-4 h-4" />
-                                                </Button>
-                                                <Button
-                                                    variant="destructive"
-                                                    size="icon"
-                                                    className="w-8 h-8"
-                                                    onClick={() => deleteTicket(ticket.id)}
-                                                    disabled={actionLoading === `delete-${ticket.id}` || actionLoading === `toggle-${ticket.id}`}
-                                                >
-                                                    <Trash2 className="w-4 h-4" />
                                                 </Button>
                                             </td>
                                         </tr>
