@@ -13,16 +13,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useAuth } from "@/context/AuthContext";
+import { signIn } from "next-auth/react";
 
 function LoginContent() {
   const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { login } = useAuth();
 
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
 
@@ -31,14 +31,22 @@ function LoginContent() {
     setError("");
     setLoading(true);
 
-    const success = await login(username);
+    const result = await signIn("credentials", {
+      username,
+      password,
+      redirect: false,
+    });
 
-    if (success) {
-      router.push(callbackUrl);
-    } else {
+    if (result?.error) {
       setError("Invalid username or email. Please check your credentials.");
+      setLoading(false);
+    } else if (result?.ok) {
+      // give next-auth session a moment to populate cookies before raw redirect
+      setTimeout(() => {
+        router.push(callbackUrl);
+        router.refresh();
+      }, 500);
     }
-    setLoading(false);
   };
 
   return (
@@ -72,6 +80,17 @@ function LoginContent() {
                     placeholder="Enter your name or email"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="password">Password</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="Enter your password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                     required
                   />
                 </div>

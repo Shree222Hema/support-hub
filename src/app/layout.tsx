@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { AuthProvider } from "@/context/AuthContext";
+import { NextAuthProvider } from "@/providers/NextAuthProvider";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
@@ -29,7 +30,9 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <AuthProvider>{children}</AuthProvider>
+        <NextAuthProvider>
+          <AuthProvider>{children}</AuthProvider>
+        </NextAuthProvider>
         <Toaster position="top-right" richColors />
       </body>
     </html>

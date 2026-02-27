@@ -1,11 +1,12 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSession, signOut } from "next-auth/react";
 
 interface User {
   id: string;
-  username: string;
+  username: string; // Mapped from NextAuth `name` or `email`
   role: string;
 }
 
@@ -13,50 +14,38 @@ interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (username: string) => Promise<boolean>;
+  login: (username: string) => Promise<boolean>; // Deprecated conceptually, but kept for interface compatibility if needed
   logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const { data: session, status } = useSession();
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setUser(JSON.parse(storedUser));
-    }
-    setIsLoading(false);
-  }, []);
-
-  const login = async (username: string): Promise<boolean> => {
-    try {
-      const response = await fetch("/api/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username }),
+    if (session?.user) {
+      setUser({
+        id: session.user.id as string,
+        username: session.user.name || session.user.email || "User",
+        role: (session.user as any).role || "USER",
       });
-
-      if (response.ok) {
-        const data = await response.json();
-        setUser(data.user);
-        localStorage.setItem("user", JSON.stringify(data.user));
-        return true;
-      }
-      return false;
-    } catch (error) {
-      console.error("Login failed:", error);
-      return false;
+    } else {
+      setUser(null);
     }
+  }, [session]);
+
+  // We keep this signature for compatibility, but the actual login happens 
+  // via NextAuth `signIn` in the login page now.
+  const login = async (username: string): Promise<boolean> => {
+    console.warn("login() called on AuthContext. Use NextAuth signIn() instead.");
+    return false;
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem("user");
+  const logout = async () => {
+    await signOut({ redirect: false });
     router.push("/login");
   };
 
@@ -64,8 +53,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     <AuthContext.Provider
       value={{
         user,
-        isAuthenticated: !!user,
-        isLoading,
+        isAuthenticated: status === "authenticated",
+        isLoading: status === "loading",
         login,
         logout,
       }}

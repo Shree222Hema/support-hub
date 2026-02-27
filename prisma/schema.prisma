@@ -16,6 +16,7 @@ model TeamMember {
   id         String    @id @db.Uuid
   name       String    @db.VarChar(255)
   email      String    @unique(map: "ix_team_members_email") @db.VarChar(255)
+  password   String?   @db.VarChar(255)
   role       UserRole  @default(USER)
   created_at DateTime? @default(now()) @db.Timestamptz(6)
   tickets    Ticket[]
