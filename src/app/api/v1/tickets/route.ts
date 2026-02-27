@@ -84,6 +84,11 @@ export async function POST(request: Request) {
             body.tenant_id = formData.get("tenant_id")?.toString() || null;
             body.user_email = formData.get("user_email")?.toString() || null;
             body.source_app = formData.get("source_app")?.toString() || null;
+            body.type = formData.get("type")?.toString() || null;
+            body.story_points = formData.get("story_points")?.toString() || null;
+            body.labels = formData.get("labels")?.toString() || null;
+            body.due_date = formData.get("due_date")?.toString() || null;
+            body.epic_link = formData.get("epic_link")?.toString() || null;
 
             console.log("Extracted fields:", body);
 
@@ -163,6 +168,11 @@ export async function POST(request: Request) {
                 tenant_id: body.tenant_id || null,
                 user_email: body.user_email || null,
                 source_app: body.source_app || null,
+                type: body.type as any || "TASK",
+                story_points: body.story_points ? parseInt(body.story_points, 10) : null,
+                labels: Array.isArray(body.labels) ? body.labels : (typeof body.labels === "string" ? body.labels.split(",").map((l: string) => l.trim()).filter(Boolean) : []),
+                due_date: body.due_date ? new Date(body.due_date) : null,
+                epic_link: body.epic_link || null,
                 attachments: {
                     create: attachmentsData
                 }

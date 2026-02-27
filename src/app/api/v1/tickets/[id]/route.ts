@@ -39,11 +39,21 @@ export async function PUT(request: Request, context: { params: Promise<{ id: str
         // Only update fields provided in the body
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const updateData: any = {};
-        const allowedFields = ['title', 'description', 'state', 'priority', 'assigned_to'];
+        const allowedFields = ['title', 'description', 'state', 'priority', 'assigned_to', 'type', 'epic_link'];
         for (const field of allowedFields) {
             if (body[field] !== undefined) {
                 updateData[field] = body[field];
             }
+        }
+
+        if (body.story_points !== undefined) {
+            updateData.story_points = body.story_points ? parseInt(body.story_points.toString(), 10) : null;
+        }
+        if (body.labels !== undefined) {
+            updateData.labels = Array.isArray(body.labels) ? body.labels : (typeof body.labels === "string" ? body.labels.split(",").map((l: string) => l.trim()).filter(Boolean) : []);
+        }
+        if (body.due_date !== undefined) {
+            updateData.due_date = body.due_date ? new Date(body.due_date) : null;
         }
 
         const updatedTicket = await prisma.ticket.update({

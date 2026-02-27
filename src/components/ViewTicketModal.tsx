@@ -16,6 +16,11 @@ type Ticket = {
     tenant_id: string | null;
     user_email: string | null;
     source_app: string | null;
+    type: "BUG" | "TASK" | "STORY" | "EPIC";
+    story_points: number | null;
+    labels: string[];
+    due_date: string | null;
+    epic_link: string | null;
     created_at: string;
 };
 
@@ -150,6 +155,42 @@ export function ViewTicketModal({ ticket, isOpen, onClose, onSuccess }: ViewTick
                                         ))}
                                     </SelectContent>
                                 </Select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="border-t pt-4">
+                        <h4 className="text-sm font-semibold mb-3">Agile Details</h4>
+                        <div className="grid grid-cols-2 gap-y-4 gap-x-4">
+                            <div className="space-y-1">
+                                <h5 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Issue Type</h5>
+                                <p className="text-sm">
+                                    <Badge variant="outline" className="bg-indigo-50 text-indigo-700 hover:bg-indigo-50">
+                                        {ticket.type || "TASK"}
+                                    </Badge>
+                                </p>
+                            </div>
+                            <div className="space-y-1">
+                                <h5 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Story Points</h5>
+                                <p className="text-sm font-semibold">{ticket.story_points ?? <span className="text-muted-foreground font-normal italic">Unestimated</span>}</p>
+                            </div>
+                            <div className="space-y-1">
+                                <h5 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Due Date</h5>
+                                <p className="text-sm">{ticket.due_date ? format(new Date(ticket.due_date), "MMM d, yyyy") : <span className="text-muted-foreground italic">No due date</span>}</p>
+                            </div>
+                            <div className="space-y-1">
+                                <h5 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Labels</h5>
+                                <div className="flex flex-wrap gap-1 mt-1">
+                                    {ticket.labels && ticket.labels.length > 0 ? (
+                                        ticket.labels.map(label => (
+                                            <Badge key={label} variant="secondary" className="text-xs">
+                                                {label}
+                                            </Badge>
+                                        ))
+                                    ) : (
+                                        <span className="text-sm text-muted-foreground italic">None</span>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </div>

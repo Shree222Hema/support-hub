@@ -10,8 +10,7 @@ async function main() {
                 id: uuidv4(),
                 name: "Admin User",
                 email: "admin@omi.com",
-                role: "MANAGER",
-                is_active: true
+                role: "MANAGER"
             }
         });
         console.log("Successfully created Manager:", manager);

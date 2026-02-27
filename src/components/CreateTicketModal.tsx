@@ -31,7 +31,11 @@ export function CreateTicketModal({ onSuccess }: { onSuccess: () => void }) {
     const [open, setOpen] = useState(false);
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
+    const [type, setType] = useState<"BUG" | "TASK" | "STORY" | "EPIC">("TASK");
     const [priority, setPriority] = useState<"LOW" | "MEDIUM" | "HIGH">("MEDIUM");
+    const [storyPoints, setStoryPoints] = useState<string>("");
+    const [labels, setLabels] = useState("");
+    const [dueDate, setDueDate] = useState("");
     const [assignedTo, setAssignedTo] = useState<string>("none");
     const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
     const [loading, setLoading] = useState(false);
@@ -55,6 +59,12 @@ export function CreateTicketModal({ onSuccess }: { onSuccess: () => void }) {
             formData.append("title", title);
             formData.append("description", description);
             formData.append("priority", priority);
+            formData.append("type", type);
+
+            if (storyPoints) formData.append("story_points", storyPoints);
+            if (labels) formData.append("labels", labels);
+            if (dueDate) formData.append("due_date", dueDate);
+
             if (assignedTo !== "none") {
                 formData.append("assigned_to", assignedTo);
             }
@@ -75,6 +85,10 @@ export function CreateTicketModal({ onSuccess }: { onSuccess: () => void }) {
                 setTitle("");
                 setDescription("");
                 setPriority("MEDIUM");
+                setType("TASK");
+                setStoryPoints("");
+                setLabels("");
+                setDueDate("");
                 setAssignedTo("none");
                 setFiles(null);
                 toast.success("Ticket created successfully!");
@@ -127,8 +141,57 @@ export function CreateTicketModal({ onSuccess }: { onSuccess: () => void }) {
                                 placeholder="Detailed explanation of the problem..."
                                 required
                                 className="resize-none"
-                                rows={4}
+                                rows={3}
                             />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="grid gap-2">
+                                <Label htmlFor="type">Issue Type</Label>
+                                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                                <Select value={type} onValueChange={(val: any) => setType(val)}>
+                                    <SelectTrigger id="type">
+                                        <SelectValue placeholder="Select type" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="BUG">Bug</SelectItem>
+                                        <SelectItem value="TASK">Task</SelectItem>
+                                        <SelectItem value="STORY">Story</SelectItem>
+                                        <SelectItem value="EPIC">Epic</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="storyPoints">Story Points</Label>
+                                <Input
+                                    id="storyPoints"
+                                    type="number"
+                                    min="1"
+                                    max="100"
+                                    value={storyPoints}
+                                    onChange={(e) => setStoryPoints(e.target.value)}
+                                    placeholder="e.g. 5"
+                                />
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="grid gap-2">
+                                <Label htmlFor="labels">Labels</Label>
+                                <Input
+                                    id="labels"
+                                    value={labels}
+                                    onChange={(e) => setLabels(e.target.value)}
+                                    placeholder="frontend, urgent..."
+                                />
+                            </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="dueDate">Due Date</Label>
+                                <Input
+                                    id="dueDate"
+                                    type="date"
+                                    value={dueDate}
+                                    onChange={(e) => setDueDate(e.target.value)}
+                                />
+                            </div>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="grid gap-2">

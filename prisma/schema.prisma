@@ -37,6 +37,11 @@ model Ticket {
   tenant_id    String?            @db.VarChar(255)
   user_email   String?            @db.VarChar(255)
   source_app   String?            @db.VarChar(255)
+  type         tickettype         @default(TASK)
+  story_points Int?
+  labels       String[]           @db.VarChar(255)
+  due_date     DateTime?          @db.Timestamptz(6)
+  epic_link    String?            @db.VarChar(255)
   team_member  TeamMember?        @relation(fields: [assigned_to], references: [id], onUpdate: NoAction)
   attachments  TicketAttachment[]
   comments     TicketComment[]
@@ -92,6 +97,13 @@ enum ticketpriority {
   LOW
   MEDIUM
   HIGH
+}
+
+enum tickettype {
+  BUG
+  TASK
+  STORY
+  EPIC
 }
 
 enum ticketstate {
