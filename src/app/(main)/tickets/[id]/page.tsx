@@ -156,11 +156,12 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
                                     {ticket.attachments.map((file) => {
                                         const isExternal = file.fileType === "image/external";
                                         const isImage = file.fileType.startsWith("image/");
+                                        const isVideo = file.fileType.startsWith("video/");
 
                                         return (
                                             <div key={file.id} className="border rounded-md p-3 flex flex-col gap-3 group hover:shadow-sm transition-shadow bg-white">
                                                 <div className="flex items-center gap-2">
-                                                    {isImage ? <ImageIcon className="w-4 h-4 text-blue-500" /> : <FileIcon className="w-4 h-4 text-orange-500" />}
+                                                    {isImage ? <ImageIcon className="w-4 h-4 text-blue-500" /> : isVideo ? <FileIcon className="w-4 h-4 text-purple-500" /> : <FileIcon className="w-4 h-4 text-orange-500" />}
                                                     <span className="font-medium truncate text-[13px] text-slate-700 flex-1" title={file.fileName}>
                                                         {file.fileName}
                                                     </span>
@@ -172,6 +173,16 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
                                                         <img
                                                             src={file.fileUrl}
                                                             alt={file.fileName}
+                                                            className="object-contain w-full h-full"
+                                                        />
+                                                    </div>
+                                                )}
+
+                                                {isVideo && (
+                                                    <div className="relative aspect-video rounded overflow-hidden border bg-black mt-1">
+                                                        <video
+                                                            src={file.fileUrl}
+                                                            controls
                                                             className="object-contain w-full h-full"
                                                         />
                                                     </div>

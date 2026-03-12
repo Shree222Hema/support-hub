@@ -8,7 +8,7 @@ import path from "path";
 
 const UPLOAD_DIR = path.join(process.cwd(), "public/uploads");
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
-const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp", "application/pdf"];
+const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp", "application/pdf", "video/mp4", "video/quicktime", "video/webm"];
 
 export async function GET(request: Request) {
     try {

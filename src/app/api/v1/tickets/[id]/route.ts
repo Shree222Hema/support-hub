@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { sendTicketAssignmentNotification } from "@/lib/notification";
+import { sendTicketAssignmentNotification, sendTicketCompletionNotification } from "@/lib/notification";
 
 export async function GET(request: Request, context: { params: Promise<{ id: string }> }) {
     try {
@@ -73,6 +73,13 @@ export async function PUT(request: Request, context: { params: Promise<{ id: str
                     updatedTicket.team_member.name,
                     updatedTicket.team_member.email
                 );
+            }
+        }
+
+        // Trigger notification ONLY if state was changed to a completed state
+        if ("state" in updateData && updateData.state !== existingTicket.state) {
+            if (updateData.state === "CLOSED" || updateData.state === "COMPLETED") {
+                sendTicketCompletionNotification(updatedTicket);
             }
         }
 

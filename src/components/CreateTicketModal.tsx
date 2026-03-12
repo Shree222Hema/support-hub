@@ -232,7 +232,7 @@ export function CreateTicketModal({ onSuccess }: { onSuccess: () => void }) {
                                 type="file"
                                 multiple
                                 onChange={(e) => setFiles(e.target.files)}
-                                accept="image/*,application/pdf"
+                                accept="image/*,video/*,application/pdf"
                                 className="cursor-pointer"
                             />
                             {files && files.length > 0 && (
