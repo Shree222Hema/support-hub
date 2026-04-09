@@ -34,16 +34,21 @@ export async function POST(request: Request) {
 
     let ticket;
     try {
+      // [EDUCATIONAL] Attempting to create a ticket using standard Prisma ORM methods.
+      // High-level ORMs are great but sometimes require specific database configurations (like Replica Sets).
       ticket = await prisma.ticket.create({
         data: {
           title,
           description,
-          priority: priority || 'Medium',
-          category,
+          priority: priority || "Medium",
+          category: category || "General",
           creatorId: (user as any).userId,
-        }
+        },
       });
     } catch (error: any) {
+      // [EDUCATIONAL] Fallback logic for standalone MongoDB instances.
+      // If the database is NOT a replica set, Prisma transactions fail with error P2031.
+      // We bypass this by using a "Raw Command" which talks directly to MongoDB.
       if (error.code === 'P2031') {
         const timestamp = new Date().toISOString();
         await (prisma as any).$runCommandRaw({
@@ -52,13 +57,15 @@ export async function POST(request: Request) {
             title,
             description,
             status: 'Open',
-            priority: priority || 'Medium',
-            category,
+            priority: priority || "Medium",
+            category: category || "General",
             creatorId: { "$oid": (user as any).userId },
             createdAt: { "$date": timestamp },
             updatedAt: { "$date": timestamp }
           }]
         });
+        
+        // Fetch the newly inserted ticket to return it
         ticket = await prisma.ticket.findFirst({
           where: { title, creatorId: (user as any).userId },
           orderBy: { createdAt: 'desc' }

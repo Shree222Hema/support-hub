@@ -1,22 +1,30 @@
 import { jwtVerify, SignJWT } from 'jose';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret';
+// [EDUCATIONAL] this secret is used to sign the JWT. In production, always use a long random string.
+const secret = new TextEncoder().encode(process.env.AUTH_SECRET || "default_fallback_secret_change_me");
 
+/**
+ * [EDUCATIONAL] Signs a JWT token with user information.
+ * JWT (JSON Web Token) is a secure way to transmit information between parties.
+ */
 export async function signToken(payload: any) {
-  const secret = new TextEncoder().encode(JWT_SECRET);
   return await new SignJWT(payload)
-    .setProtectedHeader({ alg: 'HS256' })
+    .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
-    .setExpirationTime('2h')
+    .setExpirationTime("24h")
     .sign(secret);
 }
 
+/**
+ * [EDUCATIONAL] Verifies a JWT token from the request headers.
+ * This function checks if the user is logged in before allowing API access.
+ */
 export async function verifyToken(request: Request) {
   const authHeader = request.headers.get('authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
   const token = authHeader.split(' ')[1];
   try {
-    const { payload } = await jwtVerify(token, new TextEncoder().encode(JWT_SECRET));
+    const { payload } = await jwtVerify(token, secret);
     return payload;
   } catch {
     return null;
