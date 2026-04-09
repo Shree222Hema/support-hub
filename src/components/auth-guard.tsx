@@ -11,7 +11,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      router.replace(`/login?callbackUrl=${encodeURIComponent(pathname)}`);
+      router.replace(`/login?callbackUrl=${encodeURIComponent(pathname || "/dashboard")}`);
     }
   }, [isAuthenticated, isLoading, router, pathname]);
 

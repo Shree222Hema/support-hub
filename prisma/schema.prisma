@@ -1,0 +1,82 @@
+generator client {
+  provider = "prisma-client-js"
+  engineType = "library"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  email     String   @unique
+  password  String
+  name      String?
+  createdAt DateTime? @default(now())
+  boards    Board[]  @relation("BoardOwner")
+  memberOf  Board[]  @relation("BoardMember", fields: [memberOfIds], references: [id])
+  memberOfIds String[] @db.ObjectId
+  tasks     Task[]
+  tickets   Ticket[] @relation("TicketCreator")
+  assignedTickets Ticket[] @relation("TicketAssignee")
+  logs      ActivityLog[]
+}
+
+model Board {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  ownerId   String   @db.ObjectId
+  owner     User     @relation("BoardOwner", fields: [ownerId], references: [id])
+  members   User[]   @relation("BoardMember", fields: [memberIds], references: [id])
+  memberIds String[] @db.ObjectId
+  tasks     Task[]
+  logs      ActivityLog[]
+  createdAt DateTime @default(now())
+}
+
+model Task {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  description String?
+  status      String   @default("To Do")
+  order       Int      @default(0)
+  boardId     String   @db.ObjectId
+  board       Board    @relation(fields: [boardId], references: [id])
+  assignedToId String? @db.ObjectId
+  assignedTo  User?    @relation(fields: [assignedToId], references: [id])
+  deadline    DateTime?
+  logs        ActivityLog[]
+  createdAt   DateTime @default(now())
+}
+
+model ActivityLog {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  type      String
+  details   String
+  userId    String   @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id])
+  boardId   String?  @db.ObjectId
+  board     Board?   @relation(fields: [boardId], references: [id])
+  taskId    String?  @db.ObjectId
+  task      Task?    @relation(fields: [taskId], references: [id])
+  ticketId  String?  @db.ObjectId
+  ticket    Ticket?  @relation(fields: [ticketId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model Ticket {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  description String?
+  status      String   @default("Open")
+  priority    String   @default("Medium")
+  category    String?
+  creatorId   String   @db.ObjectId
+  creator     User     @relation("TicketCreator", fields: [creatorId], references: [id])
+  assigneeId  String?  @db.ObjectId
+  assignee    User?    @relation("TicketAssignee", fields: [assigneeId], references: [id])
+  logs        ActivityLog[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Separator } from "@/components/ui/separator";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { LayoutDashboard, Settings, User, LogOut } from "lucide-react";
+import { LayoutDashboard, Settings, User, LogOut, Kanban, Ticket, Users } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { useAuth } from "@/context/AuthContext";
@@ -40,13 +40,23 @@ const data = {
       icon: LayoutDashboard,
     },
     {
-      title: "Account",
-      url: "#",
-      icon: User,
+      title: "Kanban",
+      url: "/dashboard/kanban",
+      icon: Kanban,
+    },
+    {
+      title: "Tickets",
+      url: "/dashboard/tickets",
+      icon: Ticket,
+    },
+    {
+      title: "Users",
+      url: "/dashboard/users",
+      icon: Users,
     },
     {
       title: "Settings",
-      url: "#",
+      url: "/dashboard/settings",
       icon: Settings,
     },
   ],
@@ -66,14 +76,7 @@ export default function DashboardLayout({
           <Sidebar collapsible="icon" className="group-data-[collapsible=icon]:w-[80px]">
             <SidebarHeader>
               <div className="flex items-center gap-2 px-2 py-6">
-                <Image 
-                  src="/logo.png" 
-                  alt="Traccel" 
-                  width={180} 
-                  height={70} 
-                  className="h-auto w-auto transition-all group-data-[collapsible=icon]:hidden"
-                />
-                <div className="hidden group-data-[collapsible=icon]:flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground mx-auto">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground mx-auto">
                   <LayoutDashboard className="h-6 w-6" />
                 </div>
               </div>
@@ -112,7 +115,7 @@ export default function DashboardLayout({
                       <User className="h-5 w-5 text-primary" />
                     </div>
                     <div className="flex flex-col min-w-0 group-data-[collapsible=icon]:hidden">
-                      <span className="text-sm font-semibold truncate">{user?.username}</span>
+                      <span className="text-sm font-semibold truncate">{user?.email}</span>
                       <span className="text-xs text-muted-foreground">Administrator</span>
                     </div>
                   </div>
@@ -132,8 +135,15 @@ export default function DashboardLayout({
             </SidebarFooter>
             <SidebarRail />
           </Sidebar>
-          <SidebarInset>
-            <header className="flex h-20 shrink-0 items-center gap-2 border-b px-6">
+          <SidebarInset className="relative overflow-hidden">
+            {/* Mesh Gradient Background */}
+            <div className="absolute inset-0 -z-10 h-full w-full bg-[#f8fafc]">
+              <div className="absolute h-full w-full bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:24px_24px] [mask-image:radial-gradient(ellipse_60%_60%_at_50%_50%,#000_70%,transparent_100%)] opacity-40" />
+              <div className="absolute top-[-10%] right-[-10%] h-[600px] w-[600px] rounded-full bg-purple-500/10 blur-[130px]" />
+              <div className="absolute bottom-[-10%] left-[-10%] h-[600px] w-[600px] rounded-full bg-blue-500/10 blur-[130px]" />
+            </div>
+
+            <header className="flex h-20 shrink-0 items-center gap-2 border-b px-6 bg-white/40 backdrop-blur-md z-10 sticky top-0">
               <SidebarTrigger className="-ml-1" />
               <Separator orientation="vertical" className="mr-2 h-6" />
               <Breadcrumb>
