@@ -69,6 +69,12 @@ export default function DashboardLayout({
 }) {
   const { logout, user } = useAuth();
 
+  const filteredNav = data.navMain.filter(item => {
+    if (user?.role === "ADMIN") return true;
+    // Non-admins only see Dashboard, Tickets, and Settings
+    return ["Dashboard", "Tickets", "Settings"].includes(item.title);
+  });
+
   return (
     <AuthGuard>
       <TooltipProvider>
@@ -88,7 +94,7 @@ export default function DashboardLayout({
                 </SidebarGroupLabel>
                 <SidebarGroupContent>
                   <SidebarMenu className="gap-2">
-                    {data.navMain.map((item) => (
+                    {filteredNav.map((item) => (
                       <SidebarMenuItem key={item.title}>
                         <SidebarMenuButton 
                           asChild 
@@ -115,8 +121,10 @@ export default function DashboardLayout({
                       <User className="h-5 w-5 text-primary" />
                     </div>
                     <div className="flex flex-col min-w-0 group-data-[collapsible=icon]:hidden">
-                      <span className="text-sm font-semibold truncate">{user?.email}</span>
-                      <span className="text-xs text-muted-foreground">Administrator</span>
+                      <span className="text-sm font-semibold truncate">{user?.name || user?.email}</span>
+                      <span className="text-xs text-muted-foreground uppercase font-black tracking-tighter">
+                        {user?.role === "ADMIN" ? "Administrator" : "Client Portal"}
+                      </span>
                     </div>
                   </div>
                 </SidebarMenuItem>

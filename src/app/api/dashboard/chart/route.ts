@@ -7,14 +7,22 @@ export async function GET(request: Request) {
     const user = await verifyToken(request);
     if (!user) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
 
-    // Fetch tickets created in the last 30 days
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
+    const where: any = {
+      createdAt: { gte: thirtyDaysAgo }
+    };
+
+    if (user.role !== 'ADMIN') {
+      where.OR = [
+        { creatorId: user.userId },
+        { assigneeId: user.userId }
+      ];
+    }
+
     const tickets = await prisma.ticket.findMany({
-      where: {
-        createdAt: { gte: thirtyDaysAgo }
-      },
+      where,
       select: { createdAt: true }
     });
 

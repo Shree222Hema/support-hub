@@ -7,7 +7,16 @@ export async function GET(request: Request) {
     const user = await verifyToken(request);
     if (!user) return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
 
+    const where: any = {};
+    if (user.role !== 'ADMIN') {
+      where.OR = [
+        { creatorId: user.userId },
+        { assigneeId: user.userId }
+      ];
+    }
+
     const tickets = await prisma.ticket.findMany({
+      where,
       include: {
         creator: {
           select: { name: true, email: true }
@@ -118,21 +127,54 @@ export async function PATCH(request: Request) {
     const oldTicket = await prisma.ticket.findUnique({ where: { id } });
     if (!oldTicket) return NextResponse.json({ message: 'Ticket not found' }, { status: 404 });
 
-    const ticket = await prisma.ticket.update({
-      where: { id },
-      data: updates,
-    });
+    let ticket;
+    try {
+      ticket = await prisma.ticket.update({
+        where: { id },
+        data: updates,
+      });
+    } catch (error: any) {
+      if (error.code === 'P2031') {
+        await (prisma as any).$runCommandRaw({
+          update: 'Ticket',
+          updates: [{
+            q: { _id: { "$oid": id } },
+            u: { "$set": { ...updates, updatedAt: { "$date": new Date().toISOString() } } }
+          }]
+        });
+        ticket = await prisma.ticket.findUnique({ where: { id } });
+      } else {
+        throw error;
+      }
+    }
+
+    if (!ticket) throw new Error("Failed to update ticket");
 
     // Log status change
     if (updates.status && oldTicket.status !== updates.status) {
-      await prisma.activityLog.create({
-        data: {
-          type: 'TICKET_STATUS_CHANGED',
-          details: `Ticket status moved from ${oldTicket.status} to ${updates.status}`,
-          userId: (user as any).userId,
-          ticketId: ticket.id
+      try {
+        await prisma.activityLog.create({
+          data: {
+            type: 'TICKET_STATUS_CHANGED',
+            details: `Ticket status moved from ${oldTicket.status} to ${updates.status}`,
+            userId: (user as any).userId,
+            ticketId: ticket.id
+          }
+        });
+      } catch (error: any) {
+        if (error.code === 'P2031') {
+          await (prisma as any).$runCommandRaw({
+            insert: 'ActivityLog',
+            documents: [{
+              type: 'TICKET_STATUS_CHANGED',
+              details: `Ticket status moved from ${oldTicket.status} to ${updates.status}`,
+              userId: { "$oid": (user as any).userId },
+              ticketId: { "$oid": ticket.id },
+              createdAt: { "$date": new Date().toISOString() }
+            }]
+          });
         }
-      });
+      }
     }
 
     return NextResponse.json(ticket);

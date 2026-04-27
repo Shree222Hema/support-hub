@@ -90,6 +90,32 @@ export default function TicketsPage() {
     }
   };
 
+  const handleCloseTicket = async (ticketId: string) => {
+    console.log("Attempting to close ticket:", ticketId);
+    try {
+      const response = await fetch("/api/tickets", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("token")}`
+        },
+        body: JSON.stringify({ id: ticketId, status: "Closed" })
+      });
+      
+      const data = await response.json();
+      console.log("Close ticket response:", data);
+
+      if (response.ok) {
+        fetchTickets();
+      } else {
+        alert(`Failed to close ticket: ${data.message || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error("Failed to close ticket:", error);
+      alert("A network error occurred while trying to close the ticket.");
+    }
+  };
+
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case "High": return "destructive";
@@ -209,10 +235,14 @@ export default function TicketsPage() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-40 border-none shadow-2xl">
-                      <DropdownMenuItem className="gap-2">
+                      <DropdownMenuItem className="gap-2 cursor-pointer">
                         <ArrowRight className="h-4 w-4" /> View Details
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="text-destructive gap-2">
+                      <DropdownMenuItem 
+                        variant="destructive"
+                        className="gap-2 cursor-pointer"
+                        onSelect={() => handleCloseTicket(ticket.id)}
+                      >
                          Close Ticket
                       </DropdownMenuItem>
                     </DropdownMenuContent>

@@ -30,6 +30,9 @@ export async function POST(request: Request) {
 
     const { title, description, status, boardId } = await request.json();
 
+    if (!title) return NextResponse.json({ message: "Title is required" }, { status: 400 });
+    if (!boardId) return NextResponse.json({ message: "Board ID is required" }, { status: 400 });
+
     let task;
     try {
       task = await prisma.task.create({
@@ -38,27 +41,35 @@ export async function POST(request: Request) {
           description,
           status: status || "To Do",
           boardId,
-          order: 0 // Simplification for now
+          order: 0
         }
       });
     } catch (error: any) {
-      if (error.code === 'P2031') {
+      console.error("Prisma Task Creation Error:", error);
+      
+      // Fallback for non-replica set MongoDB (P2031)
+      if (error.code === 'P2031' || error.message.includes('transaction')) {
         const timestamp = new Date().toISOString();
-        await (prisma as any).$runCommandRaw({
-          insert: 'Task',
-          documents: [{
-            title,
-            description,
-            status: status || "To Do",
-            boardId: { "$oid": boardId },
-            order: 0,
-            createdAt: { "$date": timestamp }
-          }]
-        });
-        task = await prisma.task.findFirst({
-          where: { title, boardId },
-          orderBy: { createdAt: "desc" }
-        });
+        try {
+          await (prisma as any).$runCommandRaw({
+            insert: 'Task',
+            documents: [{
+              title,
+              description,
+              status: status || "To Do",
+              boardId: { "$oid": boardId },
+              order: 0,
+              createdAt: { "$date": timestamp }
+            }]
+          });
+          task = await prisma.task.findFirst({
+            where: { title, boardId },
+            orderBy: { createdAt: "desc" }
+          });
+        } catch (rawError: any) {
+          console.error("Raw MongoDB Fallback Error:", rawError);
+          throw rawError;
+        }
       } else {
         throw error;
       }

@@ -22,8 +22,9 @@ export async function POST(request: Request) {
             data: {
               email: validEmail as string,
               password: "env_managed",
-              name: "Administrator"
-            }
+              name: "Administrator",
+              role: "ADMIN"
+            } as any
           });
         } catch (error: any) {
           // Fallback for non-replica set MongoDB (P2031)
@@ -33,7 +34,8 @@ export async function POST(request: Request) {
               documents: [{
                 email: validEmail,
                 password: 'env_managed',
-                name: 'Administrator'
+                name: 'Administrator',
+                role: 'ADMIN'
               }]
             });
             user = await prisma.user.findFirst({
@@ -48,12 +50,21 @@ export async function POST(request: Request) {
       if (!user) throw new Error("Failed to sync user after creation attempt");
 
       // Issue token
-      const token = await signToken({ userId: user.id, email: user.email });
+      const token = await signToken({ 
+        userId: user.id, 
+        email: user.email, 
+        role: (user as any).role || "USER" 
+      });
 
       return NextResponse.json(
         { 
           message: "Login successful", 
-          user: { id: user.id, email: user.email, name: user.name },
+          user: { 
+            id: user.id, 
+            email: user.email, 
+            name: user.name,
+            role: (user as any).role || "USER"
+          },
           token 
         },
         { status: 200 }

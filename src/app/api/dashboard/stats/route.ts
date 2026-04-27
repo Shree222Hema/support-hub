@@ -7,11 +7,20 @@ export async function GET(request: Request) {
     const user = await verifyToken(request);
     if (!user) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
 
+    const where: any = {};
+    if (user.role !== 'ADMIN') {
+      where.OR = [
+        { creatorId: user.userId },
+        { assigneeId: user.userId }
+      ];
+    }
+
     const [totalTickets, totalUsers, resolvedTickets, recentTickets] = await Promise.all([
-      prisma.ticket.count(),
+      prisma.ticket.count({ where }),
       prisma.user.count(),
-      prisma.ticket.count({ where: { status: { in: ["Resolved", "Closed", "Done"] } } }),
+      prisma.ticket.count({ where: { ...where, status: { in: ["Resolved", "Closed", "Done"] } } }),
       prisma.ticket.findMany({
+        where,
         take: 5,
         orderBy: { createdAt: "desc" },
         include: {

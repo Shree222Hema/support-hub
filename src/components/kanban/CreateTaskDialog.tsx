@@ -25,12 +25,14 @@ export function CreateTaskDialog({ open, onOpenChange, boardId, onTaskCreated }:
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return;
 
     setLoading(true);
+    setError(null);
     try {
       const token = localStorage.getItem("token");
       const res = await fetch("/api/kanban/tasks", {
@@ -42,15 +44,19 @@ export function CreateTaskDialog({ open, onOpenChange, boardId, onTaskCreated }:
         body: JSON.stringify({ title, description, boardId, status: "To Do" })
       });
 
+      const data = await res.json();
+
       if (res.ok) {
-        const newTask = await res.json();
-        onTaskCreated(newTask);
+        onTaskCreated(data);
         setTitle("");
         setDescription("");
         onOpenChange(false);
+      } else {
+        setError(data.message || "Failed to create task. Please try again.");
       }
     } catch (error) {
       console.error("Failed to create task:", error);
+      setError("A connection error occurred. Please check your network.");
     } finally {
       setLoading(false);
     }
@@ -66,6 +72,13 @@ export function CreateTaskDialog({ open, onOpenChange, boardId, onTaskCreated }:
               Create a new item for your Kanban board.
             </DialogDescription>
           </DialogHeader>
+          
+          {error && (
+            <div className="bg-destructive/10 border border-destructive/20 text-destructive text-xs font-medium p-3 rounded-lg animate-in fade-in slide-in-from-top-1">
+              {error}
+            </div>
+          )}
+          
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
               <Label htmlFor="title">Title</Label>
