@@ -37,7 +37,26 @@ export async function POST(request: Request) {
     // 2. Check if it's a regular user (via DB)
     else {
       user = await prisma.user.findFirst({ where: { email, password } });
-      if (user) {
+      
+      // [EDUCATIONAL] Auto-setup for testing: If logging in with the test user and they don't exist, create them.
+      // This ensures your Vercel deployment works immediately without manual seeding.
+      if (!user && email === 'user@example.com' && password === 'password1166') {
+        try {
+          user = await prisma.user.create({
+            data: { email: 'user@example.com', password: 'password1166', name: 'Regular User', role: 'USER' } as any
+          });
+          isLoginSuccessful = true;
+        } catch (error: any) {
+          if (error.code === 'P2031') {
+             await (prisma as any).$runCommandRaw({
+              insert: 'User',
+              documents: [{ email: 'user@example.com', password: 'password1166', name: 'Regular User', role: 'USER' }]
+            });
+            user = await prisma.user.findFirst({ where: { email: 'user@example.com' } });
+            isLoginSuccessful = true;
+          }
+        }
+      } else if (user) {
         isLoginSuccessful = true;
       }
     }
