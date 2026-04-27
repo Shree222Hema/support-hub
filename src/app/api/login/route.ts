@@ -6,6 +6,14 @@ export async function POST(request: Request) {
   try {
     const { email, password } = await request.json();
 
+    // [DIAGNOSTIC] Check if the database is pointing to localhost on Vercel
+    if (process.env.VERCEL && process.env.DATABASE_URL?.includes('127.0.0.1')) {
+       return NextResponse.json(
+        { message: "Configuration Error: DATABASE_URL is pointing to localhost. Please set a production MongoDB Atlas URL in Vercel settings." },
+        { status: 500 }
+      );
+    }
+
     // [EDUCATIONAL] Demo Fallback: Use hardcoded values if environment variables are missing on Vercel.
     // This ensures your project demonstration works out-of-the-box.
     const validEmail = process.env.AUTH_EMAIL || process.env.AUTH_USERNAME || "test@example.com";
@@ -83,13 +91,14 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json(
-      { message: "Invalid credentials" },
+      { message: "Invalid email or password" },
       { status: 401 }
     );
   } catch (error: any) {
     console.error("Login error:", error);
+    // [DEBUG] Return the actual error message to help troubleshooting on Vercel
     return NextResponse.json(
-      { message: error.message || "An error occurred" },
+      { message: `Server Error: ${error.message || "Unknown error"}. Check if your DATABASE_URL is correct in Vercel settings.` },
       { status: 500 }
     );
   }

@@ -31,12 +31,12 @@ function LoginContent() {
     setError("");
     setLoading(true);
 
-    const success = await login(email, password);
+    const { success, message } = await login(email, password);
 
     if (success) {
       router.push(callbackUrl);
     } else {
-      setError("Invalid email or password");
+      setError(message || "Invalid email or password");
     }
     setLoading(false);
   };

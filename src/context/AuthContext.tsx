@@ -13,7 +13,7 @@ interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<{ success: boolean, message?: string }>;
   logout: () => void;
 }
 
@@ -33,7 +33,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(false);
   }, []);
 
-  const login = async (email: string, password: string): Promise<boolean> => {
+  const login = async (email: string, password: string): Promise<{ success: boolean, message?: string }> => {
     try {
       const response = await fetch("/api/login", {
         method: "POST",
@@ -41,17 +41,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         body: JSON.stringify({ email, password }),
       });
 
+      const data = await response.json();
+
       if (response.ok) {
-        const data = await response.json();
         setUser(data.user);
         localStorage.setItem("user", JSON.stringify(data.user));
         localStorage.setItem("token", data.token);
-        return true;
+        return { success: true };
       }
-      return false;
-    } catch (error) {
+      return { success: false, message: data.message };
+    } catch (error: any) {
       console.error("Login failed:", error);
-      return false;
+      return { success: false, message: "A network error occurred." };
     }
   };
 
