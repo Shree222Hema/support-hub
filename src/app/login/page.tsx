@@ -85,6 +85,42 @@ function LoginContent() {
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? "Logging in..." : "Login"}
                 </Button>
+
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground font-semibold">
+                      Demo Access
+                    </span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    className="border-primary/20 hover:bg-primary/5 hover:border-primary/50 group"
+                    onClick={() => {
+                      setEmail("test@example.com");
+                      setPassword("password1166");
+                    }}
+                  >
+                    <span className="text-[10px] font-black uppercase tracking-tighter opacity-40 group-hover:opacity-100 transition-opacity">Admin</span>
+                  </Button>
+                  <Button 
+                    type="button" 
+                    variant="outline"
+                    className="border-blue-500/20 hover:bg-blue-500/5 hover:border-blue-500/50 group"
+                    onClick={() => {
+                      setEmail("user@example.com");
+                      setPassword("password1166");
+                    }}
+                  >
+                    <span className="text-[10px] font-black uppercase tracking-tighter opacity-40 group-hover:opacity-100 transition-opacity">User</span>
+                  </Button>
+                </div>
               </div>
             </form>
           </CardContent>
