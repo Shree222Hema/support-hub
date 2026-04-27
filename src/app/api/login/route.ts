@@ -6,14 +6,16 @@ export async function POST(request: Request) {
   try {
     const { email, password } = await request.json();
 
-    const validEmail = process.env.AUTH_EMAIL || process.env.AUTH_USERNAME;
-    const validPassword = process.env.AUTH_PASSWORD;
+    // [EDUCATIONAL] Demo Fallback: Use hardcoded values if environment variables are missing on Vercel.
+    // This ensures your project demonstration works out-of-the-box.
+    const validEmail = process.env.AUTH_EMAIL || process.env.AUTH_USERNAME || "test@example.com";
+    const validPassword = process.env.AUTH_PASSWORD || "password1166";
 
     let user = null;
     let isLoginSuccessful = false;
 
-    // 1. Check if it's the Administrator (via ENV)
-    if (validEmail && email === validEmail && password === validPassword) {
+    // 1. Check if it's the Administrator
+    if (email === validEmail && password === validPassword) {
       isLoginSuccessful = true;
       // Sync/Get admin user from DB
       user = await prisma.user.findFirst({ where: { email: validEmail } });
