@@ -9,66 +9,56 @@ export async function POST(request: Request) {
     const validEmail = process.env.AUTH_EMAIL || process.env.AUTH_USERNAME;
     const validPassword = process.env.AUTH_PASSWORD;
 
-    if (email === validEmail && password === validPassword) {
-      // Sync user to database
-      let user = await prisma.user.findFirst({
-        where: { email: validEmail }
-      });
+    let user = null;
+    let isLoginSuccessful = false;
 
+    // 1. Check if it's the Administrator (via ENV)
+    if (validEmail && email === validEmail && password === validPassword) {
+      isLoginSuccessful = true;
+      // Sync/Get admin user from DB
+      user = await prisma.user.findFirst({ where: { email: validEmail } });
+      
       if (!user) {
-        // Safe creation that handles MongoDB replica set constraints
         try {
           user = await prisma.user.create({
-            data: {
-              email: validEmail as string,
-              password: "env_managed",
-              name: "Administrator",
-              role: "ADMIN"
-            } as any
+            data: { email: validEmail, password: "env_managed", name: "Administrator", role: "ADMIN" } as any
           });
         } catch (error: any) {
-          // Fallback for non-replica set MongoDB (P2031)
           if (error.code === 'P2031') {
             await (prisma as any).$runCommandRaw({
               insert: 'User',
-              documents: [{
-                email: validEmail,
-                password: 'env_managed',
-                name: 'Administrator',
-                role: 'ADMIN'
-              }]
+              documents: [{ email: validEmail, password: 'env_managed', name: 'Administrator', role: 'ADMIN' }]
             });
-            user = await prisma.user.findFirst({
-              where: { email: validEmail }
-            });
-          } else {
-            throw error;
+            user = await prisma.user.findFirst({ where: { email: validEmail } });
           }
         }
       }
+    } 
+    // 2. Check if it's a regular user (via DB)
+    else {
+      user = await prisma.user.findFirst({ where: { email, password } });
+      if (user) {
+        isLoginSuccessful = true;
+      }
+    }
 
-      if (!user) throw new Error("Failed to sync user after creation attempt");
-
-      // Issue token
+    if (isLoginSuccessful && user) {
       const token = await signToken({ 
         userId: user.id, 
         email: user.email, 
         role: (user as any).role || "USER" 
       });
 
-      return NextResponse.json(
-        { 
-          message: "Login successful", 
-          user: { 
-            id: user.id, 
-            email: user.email, 
-            name: user.name,
-            role: (user as any).role || "USER"
-          },
-          token 
+      return NextResponse.json({ 
+        message: "Login successful", 
+        user: { 
+          id: user.id, 
+          email: user.email, 
+          name: user.name,
+          role: (user as any).role || "USER"
         },
-        { status: 200 }
-      );
+        token 
+      }, { status: 200 });
     }
 
     return NextResponse.json(
